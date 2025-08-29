@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '16.0'
+        
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
+    - name: Build Release
+      run: |
+        xcodebuild build \
+          -project Dictly.xcodeproj \
+          -scheme Dictly \
+          -configuration Release \
+          -destination 'platform=macOS,arch=arm64' \
+          -derivedDataPath ./DerivedData \
+          CODE_SIGN_IDENTITY="-"
+          
+    - name: Package App
+      run: |
+        # Create release directory
+        mkdir -p release
+        
+        # Copy built app
+        cp -R ./DerivedData/Build/Products/Release/Dictly.app ./release/
+        
+        # Create zip using ditto to preserve app structure
+        ditto -c -k --rsrc --keepParent ./release/Dictly.app "./release/Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip"
+        
+        # Calculate checksum
+        cd release
+        shasum -a 256 "Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip" > checksum.txt
+        
+    - name: Create Release Notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << EOF
+        ## Dictly v${{ steps.get_version.outputs.VERSION }}
+        
+        ### Installation
+        1. Download \`Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip\`
+        2. Extract and move \`Dictly.app\` to your Applications folder
+        3. Launch Dictly and grant permissions when prompted
+        4. Add your Groq or OpenAI API key in settings
+        5. Start dictating with fn key!
+        
+        ### Requirements
+        - macOS 15.0 or later
+        - Apple Silicon (M1/M2/M3) Mac
+        - Groq or OpenAI API key
+        
+        ### Usage
+        - **Basic dictation**: Hold fn key → speak → release
+        - **AI enhancement**: Hold fn + shift → speak → release
+        
+        ### Checksum
+        \`\`\`
+        $(cat release/checksum.txt)
+        \`\`\`
+        EOF
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Dictly v${{ steps.get_version.outputs.VERSION }}"
+        body_path: release_notes.md
+        files: |
+          release/Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip
+          release/checksum.txt
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
