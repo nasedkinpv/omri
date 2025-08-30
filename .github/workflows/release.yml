@@ -53,25 +53,29 @@ jobs:
       id: release_notes
       run: |
         cat > release_notes.md << EOF
-        ## Dictly v${{ steps.get_version.outputs.VERSION }}
+        $(cat RELEASE_NOTES.md)
         
-        ### Installation
+        ---
+        
+        ## Installation
         1. Download \`Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip\`
-        2. Extract and move \`Dictly.app\` to your Applications folder
-        3. Launch Dictly and grant permissions when prompted
-        4. Add your Groq or OpenAI API key in settings
-        5. Start dictating with fn key!
+        2. Extract the zip file
+        3. Remove quarantine: \`xattr -rd com.apple.quarantine Dictly.app\`
+        4. Move \`Dictly.app\` to your Applications folder
+        5. Launch Dictly and grant permissions when prompted
+        6. Add your API key in settings (Groq, OpenAI, or local AI)
+        7. Start dictating with fn key!
         
-        ### Requirements
+        ## Requirements
         - macOS 15.0 or later
         - Apple Silicon (M1/M2/M3) Mac
-        - Groq or OpenAI API key
+        - API key (Groq, OpenAI) or local AI setup
         
-        ### Usage
+        ## Usage
         - **Basic dictation**: Hold fn key → speak → release
         - **AI enhancement**: Hold fn + shift → speak → release
         
-        ### Checksum
+        ## Checksum
         \`\`\`
         $(cat release/checksum.txt)
         \`\`\`

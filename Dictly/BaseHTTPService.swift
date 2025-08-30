@@ -21,7 +21,12 @@ class BaseHTTPService {
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        // Only add Authorization header if API key is provided
+        if !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        
         return request
     }
     

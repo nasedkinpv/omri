@@ -150,6 +150,48 @@ class OpenAITransformationService: BaseHTTPService, TransformationService {
     }
 }
 
+// MARK: - Custom/OpenAI Compatible Implementation
+
+class CustomTransformationService: BaseHTTPService, TransformationService {
+    init(apiKey: String, baseURL: String) {
+        super.init(apiKey: apiKey, endpoint: baseURL)
+    }
+
+    func transform(
+        text: String,
+        prompt: String,
+        model: String,
+        temperature: Double? = 0.7
+    ) async throws -> String {
+        var request = createBaseRequest()
+        
+        let requestBody = ModelConfigurationManager.shared.buildRequestParameters(
+            for: model,
+            prompt: prompt,
+            requestedTemperature: temperature
+        )
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            try handleHTTPResponse(data, response)
+            
+            guard let responseJson = try? JSONDecoder().decode(ChatCompletionResponse.self, from: data),
+                  let content = responseJson.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) else {
+                throw TransformationError.invalidResponse
+            }
+
+            return content
+
+        } catch let error as TransformationError {
+            throw error
+        } catch {
+            throw TransformationError.requestFailed(error)
+        }
+    }
+}
+
 // MARK: - Response Models
 
 struct ChatCompletionResponse: Codable {

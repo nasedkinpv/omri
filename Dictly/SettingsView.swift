@@ -22,7 +22,7 @@ extension Color {
     
     // Brand Gradients (using asset catalog colors)
     static let dictlyBrandGradient = LinearGradient(
-        colors: [Color("BrandBlue"), Color("BrandTeal")],
+        colors: [Color("BrandBlue"), Color("BrandPurple")],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -496,20 +496,46 @@ struct TextEnhancementSettingsContent: View {
                         }
                         
                         SettingRow(label: "Model") {
-                            Picker("", selection: $settings.transformationModel) {
-                                ForEach(settings.transformationProvider.availableModels, id: \.self) { model in
-                                    Text(model).tag(model)
+                            if settings.transformationProvider.supportsCustomBaseURL {
+                                TextField("gpt-oss-20b", text: $settings.transformationModel)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 180)
+                            } else {
+                                Picker("", selection: $settings.transformationModel) {
+                                    ForEach(settings.transformationProvider.availableModels, id: \.self) { model in
+                                        Text(model).tag(model)
+                                    }
                                 }
+                                .pickerStyle(.menu)
+                                .frame(width: 180)
                             }
-                            .pickerStyle(.menu)
-                            .frame(width: 180)
                         }
                     }
                 }
                 
-                // Account Settings
-                SettingsGroup("Account") {
-                    HStack {
+                // Custom Base URL for OpenAI Compatible providers
+                if settings.transformationProvider.supportsCustomBaseURL {
+                    SettingsGroup("Custom API Endpoint") {
+                        VStack(spacing: 16) {
+                            SettingRow(label: "Base URL") {
+                                TextField("http://localhost:11434/v1/chat/completions", text: $settings.customTransformationBaseURL)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 300)
+                            }
+                            
+                            InformationBanner(
+                                text: "For local AI models like Ollama, LM Studio, or other OpenAI-compatible APIs",
+                                icon: "server.rack",
+                                color: Color("BrandIndigo")
+                            )
+                        }
+                    }
+                }
+                
+                // Account Settings (only show for providers that require API keys)
+                if settings.transformationProvider.requiresApiKey {
+                    SettingsGroup("Account") {
+                        HStack {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("API Key")
                                 .font(.headline)
@@ -533,6 +559,7 @@ struct TextEnhancementSettingsContent: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                    }
                     }
                 }
                 
@@ -661,7 +688,7 @@ struct AboutSettingsContent: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            Text("Version 2.1 • Build 2025.08")
+                            Text("Version 1.1.0 • Build 2025.08")
                                 .font(.caption)
                                 .foregroundColor(.secondary.opacity(0.7))
                         }

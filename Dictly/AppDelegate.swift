@@ -20,10 +20,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: SettingsWindowController?
 
     // Status bar icons
-    private let defaultIcon = "waveform"
+    private let defaultIcon = "SVG Icon"
     private let recordingIcon = "person.wave.2.fill"  // Person speaking (distinct from system mic icon)
     private let processingIcon = "hourglass"  // Processing/transcription state
     private let transformationIcon = "brain.head.profile"  // AI transformation state
+    
+    // Helper function to create properly sized menu bar icons
+    private func createMenuBarIcon(named iconName: String) -> NSImage? {
+        if let image = NSImage(named: iconName) {
+            image.size = NSSize(width: 18, height: 18)
+            image.isTemplate = true
+            return image
+        }
+        return nil
+    }
 
     static func main() {
         let app = NSApplication.shared
@@ -101,21 +111,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Initialize transformation service
-        if let transformApiKey = transformApiKey, !transformApiKey.isEmpty {
-            print(
-                "Found API key: initializing \(transformProvider.rawValue) transformation services")
-
+        if transformProvider.requiresApiKey && (transformApiKey == nil || transformApiKey!.isEmpty) {
+            print("No API key found for \(transformProvider.rawValue), transformation services will not be initialized.")
+            transformationService = nil
+        } else {
+            print("Initializing \(transformProvider.rawValue) transformation services")
+            
             switch transformProvider {
             case .groq:
-                transformationService = GroqTransformationService(apiKey: transformApiKey)
+                transformationService = GroqTransformationService(apiKey: transformApiKey!)
             case .openai:
-                transformationService = OpenAITransformationService(apiKey: transformApiKey)
+                transformationService = OpenAITransformationService(apiKey: transformApiKey!)
+            case .custom:
+                let customURL = Settings.shared.customTransformationBaseURL
+                transformationService = CustomTransformationService(apiKey: transformApiKey ?? "", baseURL: customURL)
             }
-        } else {
-            print(
-                "No API key found for \(transformProvider.rawValue), transformation services will not be initialized."
-            )
-            transformationService = nil
         }
 
         // Initialize PasteManager and pass services + delegate
@@ -155,8 +165,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            // Use standard macOS template icon for idle state (adapts to dark/light mode automatically)
-            button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Dictly")
+            // Use custom SVG icon for idle state with proper menu bar sizing and template behavior
+            button.image = createMenuBarIcon(named: defaultIcon)
             button.toolTip = "Dictly"
         }
 
@@ -309,7 +319,7 @@ extension AppDelegate: AudioManagerDelegate {
 
     func audioManagerDidStopRecording() {
         // Return to standard macOS template icon
-        self.statusItem.button?.image = NSImage(systemSymbolName: defaultIcon, accessibilityDescription: "Dictly")
+        self.statusItem.button?.image = createMenuBarIcon(named: defaultIcon)
     }
 
     func audioManagerWillStartNetworkProcessing() {
@@ -324,7 +334,7 @@ extension AppDelegate: AudioManagerDelegate {
 
     func audioManager(didReceiveError error: Error) {
         // Return to standard macOS template icon on error
-        self.statusItem.button?.image = NSImage(systemSymbolName: defaultIcon, accessibilityDescription: "Dictly")
+        self.statusItem.button?.image = createMenuBarIcon(named: defaultIcon)
 
         // For better UX, use non-intrusive error handling instead of modal alerts
         let errorMessage: String
@@ -380,7 +390,7 @@ extension AppDelegate: AudioManagerDelegate {
         
         // Revert to normal icon after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.statusItem.button?.image = NSImage(systemSymbolName: self.defaultIcon, accessibilityDescription: "Dictly")
+            self.statusItem.button?.image = self.createMenuBarIcon(named: self.defaultIcon)
         }
     }
 }
@@ -405,14 +415,14 @@ extension AppDelegate: PasteManagerDelegate {
     func pasteManagerDidFinishProcessing() {
         print("Delegate: pasteManagerDidFinishProcessing - Setting icon to \(defaultIcon)")
         // Set back to default icon with success color
-        let image = NSImage(systemSymbolName: defaultIcon, accessibilityDescription: "Dictly")
+        let image = createMenuBarIcon(named: defaultIcon)
         image?.isTemplate = false
         let tintedImage = createTintedImage(from: image, color: NSColor(red: 0/255, green: 212/255, blue: 170/255, alpha: 1.0)) // brandMint for success
         self.statusItem.button?.image = tintedImage
         
         // Reset to normal template icon after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.statusItem.button?.image = NSImage(systemSymbolName: self.defaultIcon, accessibilityDescription: "Dictly")
+            self.statusItem.button?.image = self.createMenuBarIcon(named: self.defaultIcon)
         }
     }
 }

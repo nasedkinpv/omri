@@ -149,6 +149,14 @@ class Settings: ObservableObject {
         }
     }
     
+    @UserDefault("customTransformationBaseURL", defaultValue: "http://localhost:11434/v1/chat/completions")
+    var customTransformationBaseURL: String {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+        }
+    }
+    
     static let defaultTransformationPrompt = """
         You are an expert text processor specialized in improving transcribed speech. Transform the following transcribed content by:
 

@@ -6,33 +6,33 @@
   **macOS voice transcription with your own API keys**
 </div>
 
-An alternative to expensive transcription subscriptions. Use your own Groq or OpenAI API keys for fast, accurate voice-to-text with optional AI enhancement.
+An alternative to expensive transcription subscriptions. Use your own Groq, OpenAI API keys, or local AI models for fast, accurate voice-to-text with optional AI enhancement.
 
 ## Screenshots
 
 ### Main Settings Interface
-![Dictation Settings](screenshots/screenshot_5.png)
+![Dictation Settings](screenshots/dictly_dictation.png)
 
 ### Menu Bar Integration
-![Menu Bar](screenshots/screenshot_2.png)
+![Menu Bar](screenshots/dictly_menu.png)
 
 | Additional Features | |
 |---|---|
-| ![Permissions Setup](screenshots/screenshot_3.png) | ![AI Enhancement](screenshots/screenshot_4.png) |
+| ![General Settings](screenshots/dictly_general.png) | ![AI Enhancement](screenshots/dictly_ai.png) |
 
 ## Features
 
 - **Hold fn key** → speak → get text anywhere
 - **Hold fn + shift** → AI-enhanced text 
 - Works in any macOS app
-- Your own API keys (Groq/OpenAI)
+- Cloud APIs (Groq/OpenAI) or local AI models (Ollama, LM Studio)
 - Menu bar app, stays out of your way
 
 ## Quick Start
 
-1. **Get API Key**
-   - [Groq](https://console.groq.com/keys) (recommended - has free tier)
-   - [OpenAI](https://platform.openai.com/api-keys) 
+1. **Choose Your AI Provider**
+   - **Cloud**: [Groq](https://console.groq.com/keys) (free tier) or [OpenAI](https://platform.openai.com/api-keys)
+   - **Local**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
 
 2. **Download & Install**
    
@@ -54,7 +54,7 @@ An alternative to expensive transcription subscriptions. Use your own Groq or Op
 3. **Setup**
    - Grant microphone permission
    - Grant accessibility permission  
-   - Add your API key in settings
+   - Configure your AI provider in settings (API key for cloud, base URL for local)
    - Start dictating!
 
 ## Usage
@@ -72,6 +72,7 @@ An alternative to expensive transcription subscriptions. Use your own Groq or Op
 **AI Enhancement:**
 - Groq: `llama-3.3-70b-versatile`
 - OpenAI: `gpt-5`, `gpt-5-mini`
+- Local: Any OpenAI-compatible model (Ollama, LM Studio, etc.)
 
 ## Requirements
 
