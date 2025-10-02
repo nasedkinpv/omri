@@ -17,16 +17,20 @@ class BaseHTTPService {
         self.endpoint = endpoint
     }
     
-    func createBaseRequest() -> URLRequest {
-        var request = URLRequest(url: URL(string: endpoint)!)
+    func createBaseRequest() throws -> URLRequest {
+        guard let url = URL(string: endpoint) else {
+            throw TransformationError.invalidEndpoint
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         // Only add Authorization header if API key is provided
         if !apiKey.isEmpty {
             request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
-        
+
         return request
     }
     

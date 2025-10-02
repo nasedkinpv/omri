@@ -6,7 +6,7 @@
   **macOS voice transcription with your own API keys**
 </div>
 
-An alternative to expensive transcription subscriptions. Use your own Groq, OpenAI API keys, or local AI models for fast, accurate voice-to-text with optional AI enhancement.
+An alternative to expensive transcription subscriptions. Choose from 100% private on-device transcription (macOS 14+ with Parakeet, macOS 26+ with Apple), your own Groq/OpenAI API keys, or local AI models for fast, accurate voice-to-text with optional AI enhancement.
 
 ## Screenshots
 
@@ -23,16 +23,20 @@ An alternative to expensive transcription subscriptions. Use your own Groq, Open
 ## Features
 
 - **Hold fn key** → speak → get text anywhere
-- **Hold fn + shift** → AI-enhanced text 
+- **Hold fn + shift** → AI-enhanced text
+- **100% private on-device transcription** - Parakeet (macOS 14+, 25 languages) or Apple (macOS 26+)
+- **ANE-accelerated** - runs on Apple Neural Engine for optimal performance
 - Works in any macOS app
 - Cloud APIs (Groq/OpenAI) or local AI models (Ollama, LM Studio)
 - Menu bar app, stays out of your way
 
 ## Quick Start
 
-1. **Choose Your AI Provider**
+1. **Choose Your Transcription Provider**
+   - **Parakeet (On-Device)** (macOS 14+): 100% private, ANE-accelerated, 25 European languages, no API key
+   - **Apple (On-Device)** (macOS 26+): 100% private, native macOS, no API key, works offline
    - **Cloud**: [Groq](https://console.groq.com/keys) (free tier) or [OpenAI](https://platform.openai.com/api-keys)
-   - **Local**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
+   - **Local AI Enhancement**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
 
 2. **Download & Install**
    
@@ -66,7 +70,9 @@ An alternative to expensive transcription subscriptions. Use your own Groq, Open
 ## Supported Models
 
 **Transcription:**
-- Groq: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (best)  
+- Parakeet (On-Device): `parakeet-tdt-v3` (macOS 14+, 25 European languages, no API key required)
+- Apple (On-Device): Built-in model (macOS 26+, no API key required)
+- Groq: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (best)
 - OpenAI: `whisper-1`, `nova-1-whisper`
 
 **AI Enhancement:**
@@ -76,14 +82,19 @@ An alternative to expensive transcription subscriptions. Use your own Groq, Open
 
 ## Requirements
 
-- macOS 15.0+
+- macOS 14.0+ for Parakeet on-device transcription
+- macOS 26.0+ for Apple on-device transcription
+- macOS 15.0+ for cloud APIs (Groq/OpenAI)
 - Microphone access
 - Accessibility access (for universal pasting)
+- Internet connection (for cloud APIs only, not required for on-device)
 
 ## Privacy
 
-- Audio processed via your chosen API (Groq/OpenAI)
-- API keys stored in macOS Keychain
+- **Parakeet (On-Device)**: 100% private, audio never leaves your Mac (macOS 14+), ANE-accelerated
+- **Apple (On-Device)**: 100% private, audio never leaves your Mac (macOS 26+)
+- **Cloud APIs**: Audio processed via your chosen API (Groq/OpenAI)
+- API keys stored securely in macOS Keychain
 - No telemetry or tracking
 - Audio files deleted immediately after processing
 

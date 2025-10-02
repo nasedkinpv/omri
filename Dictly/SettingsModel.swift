@@ -22,12 +22,18 @@ extension Notification.Name {
 // MARK: - API Provider Enums
 
 enum TranscriptionProvider: String, CaseIterable {
+    case apple = "Apple (On-Device)"
+    case parakeet = "Parakeet (On-Device)"
     case groq = "Groq"
     case groqTranslations = "Groq Translations"
     case openai = "OpenAI"
 
     var availableModels: [String] {
         switch self {
+        case .apple:
+            return ["On-Device Model"]
+        case .parakeet:
+            return ["parakeet-tdt-v3"]
         case .groq:
             return [
                 "whisper-large-v3-turbo",
@@ -49,10 +55,22 @@ enum TranscriptionProvider: String, CaseIterable {
 
     var endpoint: String {
         switch self {
+        case .apple, .parakeet: return ""
         case .groqTranslations: return "https://api.groq.com/openai/v1/audio/translations"
         case .groq: return "https://api.groq.com/openai/v1/audio/transcriptions"
         case .openai: return "https://api.openai.com/v1/audio/transcriptions"
         }
+    }
+
+    var requiresAPIKey: Bool {
+        switch self {
+        case .apple, .parakeet: return false
+        case .groq, .groqTranslations, .openai: return true
+        }
+    }
+
+    var isOnDevice: Bool {
+        return self == .apple || self == .parakeet
     }
 }
 
@@ -69,6 +87,21 @@ class Settings: ObservableObject {
             synchronizeChanges()
             NotificationCenter.default.post(name: .transcriptionApiChanged, object: nil)
             objectWillChange.send()
+
+            // Auto-select first available model for new provider if current model is invalid
+            if let provider = TranscriptionProvider(rawValue: transcriptionProviderRaw) {
+                let availableModels = provider.availableModels
+                if !availableModels.contains(transcriptionModel) {
+                    transcriptionModel = availableModels.first ?? transcriptionModel
+                    print("SettingsModel: Auto-selected model '\(transcriptionModel)' for provider '\(provider.rawValue)'")
+                }
+
+                // Disable VAD for Apple (it has built-in speech detection)
+                if provider == .apple && enableVAD {
+                    enableVAD = false
+                    print("SettingsModel: Disabled VAD for Apple provider (has built-in speech detection)")
+                }
+            }
         }
     }
 
@@ -82,6 +115,12 @@ class Settings: ObservableObject {
         }
         set {
             transcriptionProviderRaw = newValue.rawValue
+
+            // Auto-select first available model for new provider if current model is invalid
+            let availableModels = newValue.availableModels
+            if !availableModels.contains(transcriptionModel) {
+                transcriptionModel = availableModels.first ?? transcriptionModel
+            }
         }
     }
 
@@ -117,6 +156,15 @@ class Settings: ObservableObject {
             synchronizeChanges()
             NotificationCenter.default.post(name: .transformationApiChanged, object: nil)
             objectWillChange.send()
+
+            // Auto-select first available model for new provider if current model is invalid
+            if let provider = TransformationProvider(rawValue: transformationProviderRaw) {
+                let availableModels = provider.availableModels
+                if !availableModels.contains(transformationModel) {
+                    transformationModel = availableModels.first ?? transformationModel
+                    print("SettingsModel: Auto-selected transformation model '\(transformationModel)' for provider '\(provider.rawValue)'")
+                }
+            }
         }
     }
 
@@ -130,6 +178,12 @@ class Settings: ObservableObject {
         }
         set {
             transformationProviderRaw = newValue.rawValue
+
+            // Auto-select first available model for new provider if current model is invalid
+            let availableModels = newValue.availableModels
+            if !availableModels.contains(transformationModel) {
+                transformationModel = availableModels.first ?? transformationModel
+            }
         }
     }
 
@@ -184,6 +238,55 @@ class Settings: ObservableObject {
     var startAtLogin: Bool {
         didSet {
             objectWillChange.send()
+        }
+    }
+
+    // MARK: - VAD Settings
+
+    @UserDefault("enableVAD", defaultValue: false)
+    var enableVAD: Bool {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+        }
+    }
+
+    @UserDefault("vadSensitivity", defaultValue: 0.5)
+    var vadSensitivity: Double {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+
+            // Update AudioManager with new VAD sensitivity
+            Task { @MainActor in
+                AppDelegate.shared?.getAudioManager()?.updateVADSensitivity()
+            }
+        }
+    }
+
+    @UserDefault("vadMinSpeechDuration", defaultValue: 0.25)
+    var vadMinSpeechDuration: Double {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+
+            // Update AudioManager with new VAD timing parameters
+            Task { @MainActor in
+                AppDelegate.shared?.getAudioManager()?.updateVADTimingParameters()
+            }
+        }
+    }
+
+    @UserDefault("vadSilenceTimeout", defaultValue: 1.0)
+    var vadSilenceTimeout: Double {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+
+            // Update AudioManager with new VAD timing parameters
+            Task { @MainActor in
+                AppDelegate.shared?.getAudioManager()?.updateVADTimingParameters()
+            }
         }
     }
 

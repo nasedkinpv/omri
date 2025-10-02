@@ -63,6 +63,7 @@ protocol TranscriptionService {
 
 enum TranscriptionError: Error, LocalizedError {
     case apiKeyMissing
+    case invalidEndpoint
     case requestEncodingFailed(Error?)
     case networkError(Error)
     case apiError(statusCode: Int, message: String?)
@@ -73,6 +74,8 @@ enum TranscriptionError: Error, LocalizedError {
         switch self {
         case .apiKeyMissing:
             return "Groq API key is missing. Please set it in settings."
+        case .invalidEndpoint:
+            return "Invalid API endpoint URL configured."
         case .requestEncodingFailed(let underlyingError):
             return "Failed to encode the transcription request. \(underlyingError?.localizedDescription ?? "")"
         case .networkError(let error):

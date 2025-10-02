@@ -22,7 +22,11 @@ class OpenAITranscriptionService: TranscriptionService {
             throw TranscriptionError.apiKeyMissing
         }
 
-        var request = URLRequest(url: URL(string: endpoint)!)
+        guard let url = URL(string: endpoint) else {
+            throw TranscriptionError.invalidEndpoint
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 

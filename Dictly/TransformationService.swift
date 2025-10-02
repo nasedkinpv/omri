@@ -23,6 +23,7 @@ protocol TransformationService {
 enum TransformationError: Error, LocalizedError, Equatable {
     case apiKeyMissing
     case invalidResponse
+    case invalidEndpoint
     case requestFailed(Error)
     case apiError(statusCode: Int, message: String?)
 
@@ -32,6 +33,8 @@ enum TransformationError: Error, LocalizedError, Equatable {
             return "API key is missing. Get your API key at:\n• OpenAI: https://platform.openai.com/api-keys\n• Groq: https://console.groq.com/keys"
         case .invalidResponse:
             return "Received an invalid response from the server."
+        case .invalidEndpoint:
+            return "Invalid API endpoint URL configured."
         case .requestFailed(let error):
             return "Request failed: \(error.localizedDescription)"
         case .apiError(let statusCode, let message):
@@ -44,6 +47,8 @@ enum TransformationError: Error, LocalizedError, Equatable {
         case (.apiKeyMissing, .apiKeyMissing):
             return true
         case (.invalidResponse, .invalidResponse):
+            return true
+        case (.invalidEndpoint, .invalidEndpoint):
             return true
         case (.apiError(let lhsCode, let lhsMsg), .apiError(let rhsCode, let rhsMsg)):
             return lhsCode == rhsCode && lhsMsg == rhsMsg
@@ -73,7 +78,7 @@ class GroqTransformationService: BaseHTTPService, TransformationService {
             throw TransformationError.apiKeyMissing
         }
 
-        var request = createBaseRequest()
+        var request = try createBaseRequest()
         
         // Use centralized model configuration system
         let requestBody = ModelConfigurationManager.shared.buildRequestParameters(
@@ -120,7 +125,7 @@ class OpenAITransformationService: BaseHTTPService, TransformationService {
             throw TransformationError.apiKeyMissing
         }
 
-        var request = createBaseRequest()
+        var request = try createBaseRequest()
         
         // Use centralized model configuration system
         let requestBody = ModelConfigurationManager.shared.buildRequestParameters(
@@ -163,7 +168,7 @@ class CustomTransformationService: BaseHTTPService, TransformationService {
         model: String,
         temperature: Double? = 0.7
     ) async throws -> String {
-        var request = createBaseRequest()
+        var request = try createBaseRequest()
         
         let requestBody = ModelConfigurationManager.shared.buildRequestParameters(
             for: model,

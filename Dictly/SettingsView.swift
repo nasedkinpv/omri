@@ -362,7 +362,7 @@ struct DictationSettingsContent: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .frame(width: 180)
+                        .frame(width: 180, alignment: .trailing)
                     }
                     
                     if settings.transcriptionProviderRaw == "Groq Translations" {
@@ -372,15 +372,34 @@ struct DictationSettingsContent: View {
                             color: Color("BrandBlue")
                         )
                     }
-                    
-                    SettingRow(label: "Model") {
-                        Picker("", selection: $settings.transcriptionModel) {
-                            ForEach(settings.transcriptionProvider.availableModels, id: \.self) { model in
-                                Text(model).tag(model)
+
+                    if settings.transcriptionProviderRaw == "Apple (On-Device)" {
+                        InformationBanner(
+                            text: "100% private, offline transcription. No API key required. Faster response times.",
+                            icon: "lock.shield.fill",
+                            color: Color("BrandMint")
+                        )
+                    }
+
+                    if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                        InformationBanner(
+                            text: "On-device multilingual (25 languages). ANE-accelerated. No API key required. Works offline.",
+                            icon: "cpu.fill",
+                            color: Color("BrandMint")
+                        )
+                    }
+
+                    // Only show model picker if there are multiple models to choose from
+                    if settings.transcriptionProvider.availableModels.count > 1 {
+                        SettingRow(label: "Model") {
+                            Picker("", selection: $settings.transcriptionModel) {
+                                ForEach(settings.transcriptionProvider.availableModels, id: \.self) { model in
+                                    Text(model).tag(model)
+                                }
                             }
+                            .pickerStyle(.menu)
+                            .frame(width: 180, alignment: .trailing)
                         }
-                        .pickerStyle(.menu)
-                        .frame(width: 180)
                     }
                     
                     if settings.transcriptionProviderRaw != "Groq Translations" {
@@ -400,50 +419,163 @@ struct DictationSettingsContent: View {
                                 Text("Arabic").tag("ar")
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 180)
+                            .frame(width: 180, alignment: .trailing)
                         }
                     }
                 }
             }
             
-            // Account Settings
-            SettingsGroup("Account") {
-                HStack {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Key")
-                            .font(.headline)
-                            .fontWeight(.medium)
-                        Text("Securely stored in your keychain")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+            // Account Settings (hide for on-device providers)
+            if settings.transcriptionProvider.requiresAPIKey {
+                SettingsGroup("Account") {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("API Key")
+                                .font(.headline)
+                                .fontWeight(.medium)
+                            Text("Securely stored in your keychain")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        DictlyStatusIndicator(
+                            state: settings.apiKey(for: settings.transcriptionProvider) != nil ? .connected : .disconnected,
+                            service: .transcription
+                        )
+
+                        Button("Configure") {
+                            currentProvider = settings.transcriptionProviderRaw
+                            apiKeyInput = settings.apiKey(for: settings.transcriptionProvider) ?? ""
+                            showingApiKeySheet = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
                     }
-                    
-                    Spacer()
-                    
-                    DictlyStatusIndicator(
-                        state: settings.apiKey(for: settings.transcriptionProvider) != nil ? .connected : .disconnected,
-                        service: .transcription
-                    )
-                    
-                    Button("Configure") {
-                        currentProvider = settings.transcriptionProviderRaw
-                        apiKeyInput = settings.apiKey(for: settings.transcriptionProvider) ?? ""
-                        showingApiKeySheet = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                 }
             }
             
+            // Voice Activity Detection (hide for Apple - it has built-in VAD, show for Parakeet and cloud providers)
+            if !settings.transcriptionProvider.isOnDevice || settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                SettingsGroup("Smart Voice Detection") {
+                    VStack(spacing: 16) {
+                        SettingRow(label: "Enable Smart Recording") {
+                            Toggle("", isOn: $settings.enableVAD)
+                                .toggleStyle(.switch)
+                        }
+
+                        if settings.enableVAD {
+                        InformationBanner(
+                            text: settings.transcriptionProviderRaw == "Parakeet (On-Device)"
+                                ? "Real-time streaming transcription. Text appears as you speak, completely on-device."
+                                : "Automatically starts recording when speech is detected and stops during silence",
+                            icon: "waveform.and.mic",
+                            color: Color("BrandTeal")
+                        )
+
+                        VStack(spacing: 12) {
+                            SettingRow(label: "Noise Floor") {
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    HStack {
+                                        Text("Low")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+
+                                        Slider(
+                                            value: Binding(
+                                                get: { 1.0 - settings.vadSensitivity },
+                                                set: { settings.vadSensitivity = 1.0 - $0 }
+                                            ),
+                                            in: 0.1...0.9,
+                                            step: 0.1
+                                        )
+                                        .frame(width: 120)
+
+                                        Text("High")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+
+                                    Text("Higher = detect speech in noisy environments")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                }
+                            }
+
+                            SettingRow(label: "Min Speech Duration") {
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    HStack {
+                                        Text("0.1s")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 25, alignment: .leading)
+
+                                        Slider(value: $settings.vadMinSpeechDuration, in: 0.1...1.0, step: 0.05)
+                                            .frame(width: 200)
+
+                                        Text("1.0s")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 25, alignment: .trailing)
+
+                                        Text("\(settings.vadMinSpeechDuration, specifier: "%.2f")s")
+                                            .font(.caption)
+                                            .foregroundColor(.primary)
+                                            .frame(width: 50, alignment: .trailing)
+                                    }
+
+                                    Text("Minimum length of speech to detect")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                }
+                            }
+
+                            SettingRow(label: "Silence Timeout") {
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    HStack {
+                                        Text("0.5s")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 25, alignment: .leading)
+
+                                        Slider(value: $settings.vadSilenceTimeout, in: 0.5...3.0, step: 0.1)
+                                            .frame(width: 200)
+
+                                        Text("3.0s")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 25, alignment: .trailing)
+
+                                        Text("\(settings.vadSilenceTimeout, specifier: "%.1f")s")
+                                            .font(.caption)
+                                            .foregroundColor(.primary)
+                                            .frame(width: 50, alignment: .trailing)
+                                    }
+
+                                    Text("How long to wait after speech stops")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            }
+
             // Keyboard Controls
             SettingsGroup("Keyboard Shortcuts") {
                 VStack(spacing: 12) {
                     KeyboardShortcutRow(
                         description: "Start dictation",
                         shortcut: "fn",
-                        detail: "Hold to record voice input"
+                        detail: settings.enableVAD ? "Press to activate smart recording" : "Hold to record voice input"
                     )
-                    
+
                     KeyboardShortcutRow(
                         description: "Dictation with enhancement",
                         shortcut: "fn + ⇧",
@@ -492,14 +624,14 @@ struct TextEnhancementSettingsContent: View {
                                 }
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 180)
+                            .frame(width: 180, alignment: .trailing)
                         }
                         
                         SettingRow(label: "Model") {
                             if settings.transformationProvider.supportsCustomBaseURL {
                                 TextField("gpt-oss-20b", text: $settings.transformationModel)
                                     .textFieldStyle(.roundedBorder)
-                                    .frame(width: 180)
+                                    .frame(width: 180, alignment: .trailing)
                             } else {
                                 Picker("", selection: $settings.transformationModel) {
                                     ForEach(settings.transformationProvider.availableModels, id: \.self) { model in
@@ -507,7 +639,7 @@ struct TextEnhancementSettingsContent: View {
                                     }
                                 }
                                 .pickerStyle(.menu)
-                                .frame(width: 180)
+                                .frame(width: 180, alignment: .trailing)
                             }
                         }
                     }
@@ -520,7 +652,7 @@ struct TextEnhancementSettingsContent: View {
                             SettingRow(label: "Base URL") {
                                 TextField("http://localhost:11434/v1/chat/completions", text: $settings.customTransformationBaseURL)
                                     .textFieldStyle(.roundedBorder)
-                                    .frame(width: 300)
+                                    .frame(width: 300, alignment: .trailing)
                             }
                             
                             InformationBanner(
@@ -628,7 +760,8 @@ struct TextEnhancementSettingsContent: View {
 
 struct GeneralSettingsContent: View {
     @ObservedObject var settings: Settings
-    
+    @State private var showingClearModelsAlert = false
+
     var body: some View {
         VStack(spacing: 20) {
             // App Behavior
@@ -638,7 +771,7 @@ struct GeneralSettingsContent: View {
                         .toggleStyle(.switch)
                 }
             }
-            
+
             // System Integration
             SettingsGroup("System Integration") {
                 VStack(alignment: .leading, spacing: 16) {
@@ -651,19 +784,80 @@ struct GeneralSettingsContent: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         SystemPermissionStatusView()
                     }
-                    
+
                     Text("Microphone access enables voice recording. Accessibility permission allows Dictly to insert text into any app.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
                 }
             }
+
+            // Storage Management
+            SettingsGroup("Storage") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Downloaded Models")
+                                .font(.headline)
+                                .fontWeight(.medium)
+                            Text("On-device transcription models (~600MB)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button("Clear Models...") {
+                            showingClearModelsAlert = true
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    Text("Removes downloaded language models. Models will be re-downloaded automatically when needed.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+            }
         }
+        .alert("Clear Downloaded Models?", isPresented: $showingClearModelsAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear Models", role: .destructive) {
+                clearDownloadedModels()
+            }
+        } message: {
+            Text("This will remove all downloaded transcription models (~600MB). Models will be re-downloaded automatically when you use on-device transcription.")
+        }
+    }
+
+    private func clearDownloadedModels() {
+        let fileManager = FileManager.default
+
+        // Get app support directory
+        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            print("Failed to find Application Support directory")
+            return
+        }
+
+        // Parakeet models path (FluidAudio)
+        let fluidAudioPath = appSupportURL.appendingPathComponent("FluidAudio/Models")
+
+        do {
+            if fileManager.fileExists(atPath: fluidAudioPath.path) {
+                try fileManager.removeItem(at: fluidAudioPath)
+                print("Cleared Parakeet models at \(fluidAudioPath.path)")
+            }
+        } catch {
+            print("Failed to clear Parakeet models: \(error.localizedDescription)")
+        }
+
+        // Apple SpeechAnalyzer models are managed by system, no manual cleanup needed
+        print("Model cache cleared successfully")
     }
 }
 
@@ -688,7 +882,7 @@ struct AboutSettingsContent: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            Text("Version 1.1.0 • Build 2025.08")
+                            Text("Version 1.4.0 • Build 2025.10")
                                 .font(.caption)
                                 .foregroundColor(.secondary.opacity(0.7))
                         }

@@ -9,6 +9,7 @@
 import AVFoundation
 import Cocoa
 import Combine  // Needed for Timer
+import UserNotifications
 
 @MainActor  // Make AppDelegate a MainActor class
 @main
@@ -18,6 +19,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var pasteManager: PasteManager!  // Keep a reference to PasteManager
     private var transformationService: TransformationService?
     private var settingsWindowController: SettingsWindowController?
+    private var downloadStatusMenuItem: NSMenuItem?  // For showing download progress
+
+    // Shared reference for accessing AudioManager from Settings
+    static var shared: AppDelegate?
+
+    // Method to access AudioManager for VAD updates
+    func getAudioManager() -> AudioManager? {
+        return audioManager
+    }
 
     // Status bar icons
     private let defaultIcon = "SVG Icon"
@@ -43,6 +53,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set shared reference for accessing AudioManager from Settings
+        AppDelegate.shared = self
+
+        // Request notification permissions for UserNotifications framework
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if let error = error {
+                print("Failed to request notification permissions: \(error.localizedDescription)")
+            }
+        }
+
         // Initialize services with API key from settings
         initializeServices()
 
@@ -86,12 +106,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let transformApiKey = Settings.shared.apiKey(for: transformProvider)
 
         var transcriptionService: TranscriptionService? = nil
-        
+
         // Initialize transcription service
-        if let transcriptionApiKey = transcriptionApiKey, !transcriptionApiKey.isEmpty {
-            print(
-                "Found API key: initializing \(transcriptionProvider.rawValue) transcription services"
-            )
+        if transcriptionProvider.isOnDevice {
+            // On-device provider - no API key required
+            print("Using Apple (On-Device) transcription - no API key required")
+            transcriptionService = nil
+        } else if let transcriptionApiKey = transcriptionApiKey, !transcriptionApiKey.isEmpty {
+            // Cloud providers - require API key
+            print("Initializing \(transcriptionProvider.rawValue) transcription services")
 
             switch transcriptionProvider {
             case .groq:
@@ -103,11 +126,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             case .openai:
                 transcriptionService = OpenAITranscriptionService(apiKey: transcriptionApiKey)
+            case .apple, .parakeet:
+                break // Handled above - on-device providers
             }
         } else {
-            print(
-                "No API key found for \(transcriptionProvider.rawValue), transcription services will not be initialized."
-            )
+            print("No API key found for \(transcriptionProvider.rawValue), transcription services will not be initialized.")
         }
 
         // Initialize transformation service
@@ -171,6 +194,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
+
+        // Download status item (initially hidden)
+        let downloadItem = NSMenuItem(title: "Downloading models...", action: nil, keyEquivalent: "")
+        downloadItem.isEnabled = false  // Non-interactive status display
+        downloadItem.isHidden = true
+        downloadStatusMenuItem = downloadItem
+        menu.addItem(downloadItem)
+        menu.addItem(NSMenuItem.separator())
+
         menu.addItem(
             NSMenuItem(title: "Settings...", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(
@@ -198,7 +230,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupPermissions() {
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             if !granted {
-                self.showPermissionAlert(for: "Microphone")
+                Task { @MainActor in
+                    self.showPermissionAlert(for: "Microphone")
+                }
             }
         }
 
@@ -207,7 +241,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: false] as CFDictionary
         let accessibilityEnabled = AXIsProcessTrustedWithOptions(options)
         if !accessibilityEnabled {
-            self.showPermissionAlert(for: "Accessibility")
+            Task { @MainActor in
+                self.showPermissionAlert(for: "Accessibility")
+            }
         }
         // as Groq transcription uses the API and only microphone access is required locally.
     }
@@ -375,19 +411,30 @@ extension AppDelegate: AudioManagerDelegate {
     }
     
     private func showNonIntrusiveError(message: String) {
-        // Use macOS notification center for non-intrusive feedback
-        let notification = NSUserNotification()
-        notification.title = "Dictly"
-        notification.informativeText = message
-        notification.soundName = nil // Silent notification to avoid interruption
-        NSUserNotificationCenter.default.deliver(notification)
-        
+        // Use modern UserNotifications framework for non-intrusive feedback
+        let content = UNMutableNotificationContent()
+        content.title = "Dictly"
+        content.body = message
+        content.sound = nil // Silent notification to avoid interruption
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to show notification: \(error.localizedDescription)")
+            }
+        }
+
         // Also briefly change status bar icon to indicate error, then revert
         let errorImage = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Error")
         errorImage?.isTemplate = false
         let tintedErrorImage = createTintedImage(from: errorImage, color: NSColor(red: 255/255, green: 149/255, blue: 0/255, alpha: 1.0)) // brandOrange for warning
         self.statusItem.button?.image = tintedErrorImage
-        
+
         // Revert to normal icon after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.statusItem.button?.image = self.createMenuBarIcon(named: self.defaultIcon)
@@ -419,10 +466,22 @@ extension AppDelegate: PasteManagerDelegate {
         image?.isTemplate = false
         let tintedImage = createTintedImage(from: image, color: NSColor(red: 0/255, green: 212/255, blue: 170/255, alpha: 1.0)) // brandMint for success
         self.statusItem.button?.image = tintedImage
-        
+
         // Reset to normal template icon after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.statusItem.button?.image = self.createMenuBarIcon(named: self.defaultIcon)
         }
+    }
+}
+
+// MARK: - Download Status
+extension AppDelegate {
+    func showDownloadStatus(message: String) {
+        downloadStatusMenuItem?.title = message
+        downloadStatusMenuItem?.isHidden = false
+    }
+
+    func hideDownloadStatus() {
+        downloadStatusMenuItem?.isHidden = true
     }
 }

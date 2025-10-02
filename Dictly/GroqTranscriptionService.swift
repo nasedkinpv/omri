@@ -31,8 +31,12 @@ class GroqTranscriptionService: TranscriptionService {
         guard !apiKey.isEmpty else {
             throw TranscriptionError.apiKeyMissing
         }
-        
-        var request = URLRequest(url: URL(string: endpoint)!)
+
+        guard let url = URL(string: endpoint) else {
+            throw TranscriptionError.invalidEndpoint
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         

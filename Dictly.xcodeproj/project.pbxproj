@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4706C4F52E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4706C4F42E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift */; };
+		470D96BE2E8AC5B80046CF66 /* VADManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470D96BD2E8AC5B80046CF66 /* VADManager.swift */; };
+		470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 470D96C02E8AC65D0046CF66 /* FluidAudio */; };
 		473A83D92E4E84D500EA0E27 /* ModelConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473A83D82E4E84D500EA0E27 /* ModelConfiguration.swift */; };
 		47A49FF12DD278D4009E78D8 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FEC2DD278D4009E78D8 /* TranscriptionService.swift */; };
 		47A49FF22DD278D4009E78D8 /* FormattingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE32DD278D4009E78D8 /* FormattingContext.swift */; };
@@ -22,6 +25,7 @@
 		47A49FFE2DD278D4009E78D8 /* OpenAITranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE72DD278D4009E78D8 /* OpenAITranscriptionService.swift */; };
 		47A49FFF2DD278D4009E78D8 /* TransformationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FEE2DD278D4009E78D8 /* TransformationService.swift */; };
 		47A4A0002DD278D4009E78D8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 47A49FE02DD278D4009E78D8 /* Assets.xcassets */; };
+		47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */; };
 		47D433872E4CF52700EDD003 /* SettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D433862E4CF52700EDD003 /* SettingsModel.swift */; };
 		47D433892E4D180400EDD003 /* HTTPUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D433882E4D180400EDD003 /* HTTPUtilities.swift */; };
 		47D4338B2E4D180A00EDD003 /* BaseHTTPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D4338A2E4D180A00EDD003 /* BaseHTTPService.swift */; };
@@ -29,6 +33,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4706C4F42E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParakeetTranscriptionManager.swift; sourceTree = "<group>"; };
+		470D96BD2E8AC5B80046CF66 /* VADManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VADManager.swift; sourceTree = "<group>"; };
 		473A83D82E4E84D500EA0E27 /* ModelConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelConfiguration.swift; sourceTree = "<group>"; };
 		47A49FDF2DD278D4009E78D8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		47A49FE02DD278D4009E78D8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -45,6 +51,7 @@
 		47A49FED2DD278D4009E78D8 /* TransformationPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformationPrompt.swift; sourceTree = "<group>"; };
 		47A49FEE2DD278D4009E78D8 /* TransformationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformationService.swift; sourceTree = "<group>"; };
 		47A49FEF2DD278D4009E78D8 /* VoiceDictation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VoiceDictation.entitlements; sourceTree = "<group>"; };
+		47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechAnalyzerManager.swift; sourceTree = "<group>"; };
 		47D433862E4CF52700EDD003 /* SettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsModel.swift; sourceTree = "<group>"; };
 		47D433882E4D180400EDD003 /* HTTPUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPUtilities.swift; sourceTree = "<group>"; };
 		47D4338A2E4D180A00EDD003 /* BaseHTTPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseHTTPService.swift; sourceTree = "<group>"; };
@@ -57,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +74,9 @@
 		47A49FF02DD278D4009E78D8 /* Dictly */ = {
 			isa = PBXGroup;
 			children = (
+				4706C4F42E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift */,
+				47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */,
+				470D96BD2E8AC5B80046CF66 /* VADManager.swift */,
 				473A83D82E4E84D500EA0E27 /* ModelConfiguration.swift */,
 				47D4338C2E4D197C00EDD003 /* SettingsView.swift */,
 				47D4338A2E4D180A00EDD003 /* BaseHTTPService.swift */,
@@ -123,6 +134,7 @@
 			);
 			name = Dictly;
 			packageProductDependencies = (
+				470D96C02E8AC65D0046CF66 /* FluidAudio */,
 			);
 			productName = Dictly;
 			productReference = DA79FD132CDEE6650077AF85 /* Dictly.app */;
@@ -136,7 +148,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1610;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					DA79FD122CDEE6650077AF85 = {
 						CreatedOnToolsVersion = 16.1;
@@ -152,6 +164,9 @@
 			);
 			mainGroup = DA79FD0A2CDEE6650077AF85;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DA79FD142CDEE6650077AF85 /* Products */;
 			projectDirPath = "";
@@ -178,13 +193,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4706C4F52E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift in Sources */,
 				47A49FF12DD278D4009E78D8 /* TranscriptionService.swift in Sources */,
+				470D96BE2E8AC5B80046CF66 /* VADManager.swift in Sources */,
 				47A49FF22DD278D4009E78D8 /* FormattingContext.swift in Sources */,
 				47D433872E4CF52700EDD003 /* SettingsModel.swift in Sources */,
 				47D4338D2E4D197C00EDD003 /* SettingsView.swift in Sources */,
 				473A83D92E4E84D500EA0E27 /* ModelConfiguration.swift in Sources */,
 				47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */,
 				47A49FF62DD278D4009E78D8 /* GroqTranscriptionService.swift in Sources */,
+				47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */,
 				47D4338B2E4D180A00EDD003 /* BaseHTTPService.swift in Sources */,
 				47A49FF72DD278D4009E78D8 /* PasteableTextField.swift in Sources */,
 				47A49FF82DD278D4009E78D8 /* KeychainManager.swift in Sources */,
@@ -238,7 +256,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -257,11 +275,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -303,7 +322,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -316,10 +335,11 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -329,14 +349,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = Dictly/VoiceDictation.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Dictly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -349,7 +374,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beneric.Dictly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -363,14 +388,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = Dictly/VoiceDictation.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Dictly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -383,7 +413,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beneric.Dictly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -414,6 +444,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		470D96C02E8AC65D0046CF66 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DA79FD0B2CDEE6650077AF85 /* Project object */;
 }

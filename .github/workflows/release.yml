@@ -63,13 +63,13 @@ jobs:
         3. Remove quarantine: \`xattr -rd com.apple.quarantine Dictly.app\`
         4. Move \`Dictly.app\` to your Applications folder
         5. Launch Dictly and grant permissions when prompted
-        6. Add your API key in settings (Groq, OpenAI, or local AI)
+        6. Choose transcription provider in settings
         7. Start dictating with fn key!
-        
+
         ## Requirements
-        - macOS 15.0 or later
-        - Apple Silicon (M1/M2/M3) Mac
-        - API key (Groq, OpenAI) or local AI setup
+        - **For On-Device Transcription**: macOS 14.0+ (Parakeet) or macOS 26.0+ (Apple)
+        - **For Cloud APIs**: macOS 15.0+, API key (Groq or OpenAI)
+        - Apple Silicon (M1/M2/M3/M4) Mac recommended for best performance
         
         ## Usage
         - **Basic dictation**: Hold fn key → speak → release
