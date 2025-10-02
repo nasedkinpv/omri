@@ -1,18 +1,11 @@
 import Foundation
 
-// MARK: - Groq Transcription Service
+class CustomTranscriptionService: BaseHTTPService, TranscriptionService {
 
-class GroqTranscriptionService: BaseHTTPService, TranscriptionService {
-    private let isTranslation: Bool
-
-    init(apiKey: String, translation: Bool = false) {
-        self.isTranslation = translation
-        let endpoint = translation
-            ? "https://api.groq.com/openai/v1/audio/translations"
-            : "https://api.groq.com/openai/v1/audio/transcriptions"
-        super.init(apiKey: apiKey, endpoint: endpoint)
+    init(apiKey: String, baseURL: String) {
+        super.init(apiKey: apiKey, endpoint: baseURL)
     }
-    
+
     func transcribe(
         audioData: Data,
         fileName: String,
@@ -34,11 +27,11 @@ class GroqTranscriptionService: BaseHTTPService, TranscriptionService {
         // Use centralized model configuration system
         let (parameters, arrayParams) = ModelConfigurationManager.shared.buildTranscriptionParameters(
             for: model,
-            language: isTranslation ? "en" : language, // Force "en" for translations
+            language: language,
             prompt: prompt,
-            responseFormat: responseFormat ?? (isTranslation ? "json" : nil),
+            responseFormat: responseFormat,
             temperature: temperature,
-            timestampGranularities: isTranslation ? nil : timestampGranularities
+            timestampGranularities: timestampGranularities
         )
 
         request.setMultipartFormData(
@@ -52,6 +45,22 @@ class GroqTranscriptionService: BaseHTTPService, TranscriptionService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             try handleHTTPResponse(data, response)
+
+            // Handle OpenAI-compatible response format
+            let effectiveResponseFormat = responseFormat ?? "verbose_json"
+            if effectiveResponseFormat == "verbose_json" {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let text = json["text"] as? String {
+                    return GroqTranscriptionResponse(
+                        text: text,
+                        task: "transcribe",
+                        language: language,
+                        duration: nil,
+                        segments: nil
+                    )
+                }
+            }
+
             return try JSONDecoder().decode(GroqTranscriptionResponse.self, from: data)
         } catch let error as HTTPError {
             throw TranscriptionError(from: error)
@@ -62,4 +71,3 @@ class GroqTranscriptionService: BaseHTTPService, TranscriptionService {
         }
     }
 }
-

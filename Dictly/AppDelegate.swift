@@ -126,6 +126,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             case .openai:
                 transcriptionService = OpenAITranscriptionService(apiKey: transcriptionApiKey)
+            case .custom:
+                let customURL = Settings.shared.customTranscriptionBaseURL
+                transcriptionService = CustomTranscriptionService(apiKey: transcriptionApiKey, baseURL: customURL)
             case .apple, .parakeet:
                 break // Handled above - on-device providers
             }

@@ -59,6 +59,18 @@ enum TransformationError: Error, LocalizedError, Equatable {
             return false
         }
     }
+
+    // Helper to convert HTTPError to TransformationError
+    init(from httpError: HTTPError) {
+        switch httpError {
+        case .invalidEndpoint:
+            self = .invalidEndpoint
+        case .invalidResponse:
+            self = .invalidResponse
+        case .apiError(let statusCode, let message):
+            self = .apiError(statusCode: statusCode, message: message)
+        }
+    }
 }
 
 // MARK: - Groq Implementation
@@ -92,7 +104,7 @@ class GroqTransformationService: BaseHTTPService, TransformationService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             try handleHTTPResponse(data, response)
-            
+
             guard let responseJson = try? JSONDecoder().decode(ChatCompletionResponse.self, from: data),
                   let content = responseJson.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 throw TransformationError.invalidResponse
@@ -100,6 +112,8 @@ class GroqTransformationService: BaseHTTPService, TransformationService {
 
             return content
 
+        } catch let error as HTTPError {
+            throw TransformationError(from: error)
         } catch let error as TransformationError {
             throw error
         } catch {
@@ -139,7 +153,7 @@ class OpenAITransformationService: BaseHTTPService, TransformationService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             try handleHTTPResponse(data, response)
-            
+
             guard let responseJson = try? JSONDecoder().decode(ChatCompletionResponse.self, from: data),
                   let content = responseJson.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 throw TransformationError.invalidResponse
@@ -147,6 +161,8 @@ class OpenAITransformationService: BaseHTTPService, TransformationService {
 
             return content
 
+        } catch let error as HTTPError {
+            throw TransformationError(from: error)
         } catch let error as TransformationError {
             throw error
         } catch {
@@ -181,7 +197,7 @@ class CustomTransformationService: BaseHTTPService, TransformationService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             try handleHTTPResponse(data, response)
-            
+
             guard let responseJson = try? JSONDecoder().decode(ChatCompletionResponse.self, from: data),
                   let content = responseJson.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 throw TransformationError.invalidResponse
@@ -189,6 +205,8 @@ class CustomTransformationService: BaseHTTPService, TransformationService {
 
             return content
 
+        } catch let error as HTTPError {
+            throw TransformationError(from: error)
         } catch let error as TransformationError {
             throw error
         } catch {

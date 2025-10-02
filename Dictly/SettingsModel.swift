@@ -27,6 +27,7 @@ enum TranscriptionProvider: String, CaseIterable {
     case groq = "Groq"
     case groqTranslations = "Groq Translations"
     case openai = "OpenAI"
+    case custom = "Custom (OpenAI Compatible)"
 
     var availableModels: [String] {
         switch self {
@@ -50,6 +51,8 @@ enum TranscriptionProvider: String, CaseIterable {
                 "nova-1-whisper",
                 "nova-1-whisper-en",
             ]
+        case .custom:
+            return ["whisper-1"] // Default, user can specify their own model
         }
     }
 
@@ -59,14 +62,19 @@ enum TranscriptionProvider: String, CaseIterable {
         case .groqTranslations: return "https://api.groq.com/openai/v1/audio/translations"
         case .groq: return "https://api.groq.com/openai/v1/audio/transcriptions"
         case .openai: return "https://api.openai.com/v1/audio/transcriptions"
+        case .custom: return "" // Custom endpoint set via customTranscriptionBaseURL
         }
     }
 
     var requiresAPIKey: Bool {
         switch self {
         case .apple, .parakeet: return false
-        case .groq, .groqTranslations, .openai: return true
+        case .groq, .groqTranslations, .openai, .custom: return true
         }
+    }
+
+    var supportsCustomBaseURL: Bool {
+        return self == .custom
     }
 
     var isOnDevice: Bool {
@@ -205,6 +213,14 @@ class Settings: ObservableObject {
     
     @UserDefault("customTransformationBaseURL", defaultValue: "http://localhost:11434/v1/chat/completions")
     var customTransformationBaseURL: String {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+        }
+    }
+
+    @UserDefault("customTranscriptionBaseURL", defaultValue: "http://localhost:8000/v1/audio/transcriptions")
+    var customTranscriptionBaseURL: String {
         didSet {
             synchronizeChanges()
             objectWillChange.send()

@@ -88,4 +88,16 @@ enum TranscriptionError: Error, LocalizedError {
             return "An unknown error occurred during transcription."
         }
     }
+
+    // Helper to convert HTTPError to TranscriptionError
+    init(from httpError: HTTPError) {
+        switch httpError {
+        case .invalidEndpoint:
+            self = .invalidEndpoint
+        case .invalidResponse:
+            self = .unknownError
+        case .apiError(let statusCode, let message):
+            self = .apiError(statusCode: statusCode, message: message)
+        }
+    }
 }

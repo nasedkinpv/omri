@@ -389,16 +389,22 @@ struct DictationSettingsContent: View {
                         )
                     }
 
-                    // Only show model picker if there are multiple models to choose from
-                    if settings.transcriptionProvider.availableModels.count > 1 {
+                    // Show model selection (text field for custom, picker for others)
+                    if settings.transcriptionProvider.supportsCustomBaseURL || settings.transcriptionProvider.availableModels.count > 1 {
                         SettingRow(label: "Model") {
-                            Picker("", selection: $settings.transcriptionModel) {
-                                ForEach(settings.transcriptionProvider.availableModels, id: \.self) { model in
-                                    Text(model).tag(model)
+                            if settings.transcriptionProvider.supportsCustomBaseURL {
+                                TextField("whisper-1", text: $settings.transcriptionModel)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 180, alignment: .trailing)
+                            } else {
+                                Picker("", selection: $settings.transcriptionModel) {
+                                    ForEach(settings.transcriptionProvider.availableModels, id: \.self) { model in
+                                        Text(model).tag(model)
+                                    }
                                 }
+                                .pickerStyle(.menu)
+                                .frame(width: 180, alignment: .trailing)
                             }
-                            .pickerStyle(.menu)
-                            .frame(width: 180, alignment: .trailing)
                         }
                     }
                     
@@ -425,6 +431,25 @@ struct DictationSettingsContent: View {
                 }
             }
             
+            // Custom Base URL for OpenAI Compatible providers
+            if settings.transcriptionProvider.supportsCustomBaseURL {
+                SettingsGroup("Custom API Endpoint") {
+                    VStack(spacing: 16) {
+                        SettingRow(label: "Base URL") {
+                            TextField("http://localhost:8000/v1/audio/transcriptions", text: $settings.customTranscriptionBaseURL)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 300, alignment: .trailing)
+                        }
+
+                        InformationBanner(
+                            text: "For local Whisper servers, faster-whisper, or other OpenAI-compatible transcription APIs",
+                            icon: "server.rack",
+                            color: Color("BrandIndigo")
+                        )
+                    }
+                }
+            }
+
             // Account Settings (hide for on-device providers)
             if settings.transcriptionProvider.requiresAPIKey {
                 SettingsGroup("Account") {

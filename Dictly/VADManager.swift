@@ -5,11 +5,49 @@
 //  Created by beneric.studio
 //  Copyright © 2025 beneric.studio. All rights reserved.
 //
-//  Voice Activity Detect0125ion Manager using Silero VAD via FluidAudio
+//  Voice Activity Detection Manager using Silero VAD via FluidAudio
 //
 
 @preconcurrency import AVFoundation
 import Foundation
+
+// MARK: - Shared Types (used by both implementations)
+
+enum VADError: LocalizedError {
+    case notInitialized
+    case initializationFailed(String)
+    case unsupportedFormat
+    case audioProcessingFailed
+    case processingError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .notInitialized:
+            return "VAD Manager is not initialized. Call initialize() first."
+        case .initializationFailed(let reason):
+            return "Failed to initialize VAD: \(reason)"
+        case .unsupportedFormat:
+            return "Audio format not supported. VAD requires 16kHz PCM Float32 format."
+        case .audioProcessingFailed:
+            return "Failed to process audio data for VAD analysis."
+        case .processingError(let reason):
+            return "VAD processing error: \(reason)"
+        }
+    }
+}
+
+@MainActor
+protocol VADManagerDelegate: AnyObject {
+    func vadManagerDidStartListening()
+    func vadManagerDidStopListening()
+    func vadManagerDidDetectSpeechStart()
+    func vadManagerDidDetectSpeechEnd()
+    func vadManager(didCompleteAudioSamples samples: [Float], duration: Double)
+    func vadManager(didCompleteAudioChunk audioData: Data, duration: Double)
+    func vadManager(didEncounterError error: VADError)
+}
+
+// MARK: - FluidAudio Implementation
 
 #if canImport(FluidAudio)
 import FluidAudio
@@ -405,44 +443,6 @@ class VADManager: ObservableObject {
     }
 }
 
-// MARK: - Error Handling
-
-enum VADError: LocalizedError {
-    case notInitialized
-    case initializationFailed(String)
-    case unsupportedFormat
-    case audioProcessingFailed
-    case processingError(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .notInitialized:
-            return "VAD Manager is not initialized. Call initialize() first."
-        case .initializationFailed(let reason):
-            return "Failed to initialize VAD: \(reason)"
-        case .unsupportedFormat:
-            return "Audio format not supported. VAD requires 16kHz PCM Float32 format."
-        case .audioProcessingFailed:
-            return "Failed to process audio data for VAD analysis."
-        case .processingError(let reason):
-            return "VAD processing error: \(reason)"
-        }
-    }
-}
-
-// MARK: - Delegate Protocol
-
-@MainActor
-protocol VADManagerDelegate: AnyObject {
-    func vadManagerDidStartListening()
-    func vadManagerDidStopListening()
-    func vadManagerDidDetectSpeechStart()
-    func vadManagerDidDetectSpeechEnd()
-    func vadManager(didCompleteAudioSamples samples: [Float], duration: Double)
-    func vadManager(didCompleteAudioChunk audioData: Data, duration: Double)
-    func vadManager(didEncounterError error: VADError)
-}
-
 #else
 
 // MARK: - Fallback Implementation (FluidAudio not available)
@@ -470,40 +470,6 @@ class VADManager: ObservableObject {
     func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {}
     func updateSensitivity(_ sensitivity: Double) {}
     func updateTimingParameters(minSpeechDuration: Double, silenceTimeout: Double) {}
-}
-
-enum VADError: LocalizedError {
-    case notInitialized
-    case initializationFailed(String)
-    case unsupportedFormat
-    case audioProcessingFailed
-    case processingError(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .notInitialized:
-            return "VAD Manager is not initialized."
-        case .initializationFailed(let reason):
-            return "Failed to initialize VAD: \(reason)"
-        case .unsupportedFormat:
-            return "Audio format not supported."
-        case .audioProcessingFailed:
-            return "Failed to process audio data."
-        case .processingError(let reason):
-            return "VAD processing error: \(reason)"
-        }
-    }
-}
-
-@MainActor
-protocol VADManagerDelegate: AnyObject {
-    func vadManagerDidStartListening()
-    func vadManagerDidStopListening()
-    func vadManagerDidDetectSpeechStart()
-    func vadManagerDidDetectSpeechEnd()
-    func vadManager(didCompleteAudioSamples samples: [Float], duration: Double)
-    func vadManager(didCompleteAudioChunk audioData: Data, duration: Double)
-    func vadManager(didEncounterError error: VADError)
 }
 
 #endif
