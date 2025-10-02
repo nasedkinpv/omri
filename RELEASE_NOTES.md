@@ -1,3 +1,25 @@
+# Dictly v1.4.1
+
+## Performance Optimization Release
+
+Faster dictate→paste flow with reduced latency and improved VAD reliability.
+
+### Performance Improvements
+
+**Dictate→Paste Speed (~700ms faster)**
+- Instant fn key response (removed 10ms dispatch delay)
+- Faster Apple SpeechAnalyzer (removed 500ms artificial delay)
+- Optimized async pipeline (removed Task spawning overhead)
+- Fixed VAD initialization race condition
+
+**Technical Changes**
+- Remove DispatchQueue.main.async from keyboard handling
+- Convert transcription methods to direct async
+- Proper VAD initialization await before startListening
+- Version management with single source of truth (Version.swift)
+
+---
+
 # Dictly v1.4.0
 
 ## Enhanced On-Device & Streaming Improvements
