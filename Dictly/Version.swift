@@ -12,7 +12,7 @@ import Foundation
 
 struct AppVersion {
     /// Semantic version (major.minor.patch)
-    static let marketing = "1.4.0"
+    static let marketing = "1.4.1"
 
     /// Build identifier (year.month or build number)
     static let build = "2025.10"
