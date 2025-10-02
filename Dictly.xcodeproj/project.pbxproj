@@ -31,6 +31,7 @@
 		47D4338B2E4D180A00EDD003 /* BaseHTTPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D4338A2E4D180A00EDD003 /* BaseHTTPService.swift */; };
 		47D4338D2E4D197C00EDD003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D4338C2E4D197C00EDD003 /* SettingsView.swift */; };
 		47EF729E2E8EE66A002D0147 /* HTTPServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF729D2E8EE66A002D0147 /* HTTPServiceProtocol.swift */; };
+		47EF72A02E8EF544002D0147 /* Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF729F2E8EF544002D0147 /* Version.swift */; };
 		C51EDDBF8D7B4BDB9F1744CF /* CustomTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B1BFF1D3E14668A0EF2A8C /* CustomTranscriptionService.swift */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +60,7 @@
 		47D4338A2E4D180A00EDD003 /* BaseHTTPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseHTTPService.swift; sourceTree = "<group>"; };
 		47D4338C2E4D197C00EDD003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		47EF729D2E8EE66A002D0147 /* HTTPServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPServiceProtocol.swift; sourceTree = "<group>"; };
+		47EF729F2E8EF544002D0147 /* Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Version.swift; sourceTree = "<group>"; };
 		87B1BFF1D3E14668A0EF2A8C /* CustomTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTranscriptionService.swift; sourceTree = "<group>"; };
 		DA79FD132CDEE6650077AF85 /* Dictly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dictly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -78,6 +80,7 @@
 		47A49FF02DD278D4009E78D8 /* Dictly */ = {
 			isa = PBXGroup;
 			children = (
+				47EF729F2E8EF544002D0147 /* Version.swift */,
 				47EF729D2E8EE66A002D0147 /* HTTPServiceProtocol.swift */,
 				4706C4F42E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift */,
 				47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */,
@@ -221,6 +224,7 @@
 				47A49FFD2DD278D4009E78D8 /* AppDelegate.swift in Sources */,
 				47A49FFE2DD278D4009E78D8 /* OpenAITranscriptionService.swift in Sources */,
 				47A49FFF2DD278D4009E78D8 /* TransformationService.swift in Sources */,
+				47EF72A02E8EF544002D0147 /* Version.swift in Sources */,
 				C51EDDBF8D7B4BDB9F1744CF /* CustomTranscriptionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

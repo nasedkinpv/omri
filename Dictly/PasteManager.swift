@@ -31,33 +31,25 @@ class PasteManager {
         self.delegate = delegate
     }
 
-    func processAndPasteText(_ text: String, withAI: Bool = true) {
-        Task {
-            await MainActor.run { delegate?.pasteManagerWillStartProcessing() }
+    func processAndPasteText(_ text: String, withAI: Bool = true) async {
+        delegate?.pasteManagerWillStartProcessing()
 
-            // Respect both the parameter AND the settings toggle
-            let shouldUseAI = withAI && Settings.shared.enableAIProcessing
-            let processedText = await processText(text, withAI: shouldUseAI)
+        // Respect both the parameter AND the settings toggle
+        let shouldUseAI = withAI && Settings.shared.enableAIProcessing
+        let processedText = await processText(text, withAI: shouldUseAI)
 
-            await MainActor.run {
-                copyToClipboard(processedText)
-                performPaste()  // Paste immediately after clipboard copy
-                delegate?.pasteManagerDidFinishProcessing()
-            }
-        }
+        copyToClipboard(processedText)
+        performPaste()  // Paste immediately after clipboard copy
+        delegate?.pasteManagerDidFinishProcessing()
     }
 
-    func appendStreamingText(_ text: String, withAI: Bool = true) {
-        Task {
-            // For streaming, process AI transformation if needed but don't notify start/finish
-            let shouldUseAI = withAI && Settings.shared.enableAIProcessing
-            let processedText = await processText(text, withAI: shouldUseAI)
+    func appendStreamingText(_ text: String, withAI: Bool = true) async {
+        // For streaming, process AI transformation if needed but don't notify start/finish
+        let shouldUseAI = withAI && Settings.shared.enableAIProcessing
+        let processedText = await processText(text, withAI: shouldUseAI)
 
-            await MainActor.run {
-                // Append to existing text instead of replacing
-                appendTextToCurrentPosition(processedText)
-            }
-        }
+        // Append to existing text instead of replacing
+        appendTextToCurrentPosition(processedText)
     }
     
 }
