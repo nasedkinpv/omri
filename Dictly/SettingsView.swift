@@ -799,29 +799,28 @@ struct GeneralSettingsContent: View {
 
             // Storage Management
             SettingsGroup("Storage") {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Downloaded Models")
-                                .font(.headline)
+                                .font(.subheadline)
                                 .fontWeight(.medium)
                             Text("On-device transcription models (~600MB)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-
                         Spacer()
-
-                        Button("Clear Models...") {
-                            showingClearModelsAlert = true
-                        }
-                        .buttonStyle(.bordered)
                     }
 
-                    Text("Removes downloaded language models. Models will be re-downloaded automatically when needed.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
+                    Button(action: {
+                        showingClearModelsAlert = true
+                    }) {
+                        Text("Clear models...")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.blue)
+                    .help("Remove downloaded models to free ~600MB of space")
                 }
             }
         }
@@ -895,7 +894,7 @@ struct AboutSettingsContent: View {
                     VStack(spacing: 12) {
                         InfoDetailRow(title: "Platform", value: "macOS 15.0 or later")
                         InfoDetailRow(title: "Architecture", value: "Universal (Apple Silicon & Intel)")
-                        InfoDetailRow(title: "License", value: "Proprietary")
+                        InfoDetailRow(title: "License", value: "MIT License")
                         
                         HStack {
                             Text("Developer")
