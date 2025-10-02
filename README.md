@@ -10,15 +10,39 @@ An alternative to expensive transcription subscriptions. Choose from 100% privat
 
 ## Screenshots
 
-### Main Settings Interface
-![Dictation Settings](screenshots/dictly_dictation.png)
+<table>
+<tr>
+<td width="50%">
 
-### Menu Bar Integration
+### Menu Bar
 ![Menu Bar](screenshots/dictly_menu.png)
 
-| Additional Features | |
-|---|---|
-| ![General Settings](screenshots/dictly_general.png) | ![AI Enhancement](screenshots/dictly_ai.png) |
+</td>
+<td width="50%">
+
+### Dictation Settings
+![Dictation](screenshots/dictly-settings-dictation.png)
+
+</td>
+</tr>
+<tr>
+<td>
+
+### AI Polish
+![AI Polish](screenshots/dictly-settings-ai-polish.png)
+
+</td>
+<td>
+
+### General Settings
+![General](screenshots/dictly-settings-general.png)
+
+</td>
+</tr>
+</table>
+
+### About
+![About](screenshots/dictly-settings-about.png)
 
 ## Features
 
