@@ -72,7 +72,7 @@ class AudioManager {
         self.transcriptionService = transcriptionService
         audioEngine = AVAudioEngine()
         setupKeyboardMonitoring()
-        setupVADManager()
+        // VAD will be initialized lazily when first needed
     }
 
     deinit {
@@ -105,7 +105,7 @@ class AudioManager {
 
     // MARK: - VAD Setup and Management
 
-    private func setupVADManager() {
+    private func setupVADManager() async throws {
         // Initialize VAD manager if enabled (but never for Apple - it has built-in VAD)
         let provider = Settings.shared.transcriptionProvider
         if Settings.shared.enableVAD && provider != .apple {
@@ -117,17 +117,14 @@ class AudioManager {
             vadManager.delegate = self
             self.vadManager = vadManager
 
-            // Initialize VAD asynchronously
-            Task {
-                do {
-                    try await vadManager.initialize()
-                    print("VAD Manager initialized successfully")
-                } catch {
-                    print("Failed to initialize VAD Manager: \(error.localizedDescription)")
-                    await MainActor.run {
-                        self.vadManager = nil
-                    }
-                }
+            // Initialize VAD synchronously - must complete before use
+            do {
+                try await vadManager.initialize()
+                print("VAD Manager initialized successfully")
+            } catch {
+                print("Failed to initialize VAD Manager: \(error.localizedDescription)")
+                self.vadManager = nil
+                throw error
             }
         } else {
             vadManager?.shutdown()
@@ -145,7 +142,13 @@ class AudioManager {
             )
         } else if Settings.shared.enableVAD {
             // Create VAD if it doesn't exist but is now enabled
-            setupVADManager()
+            Task {
+                do {
+                    try await setupVADManager()
+                } catch {
+                    print("VAD: Failed to initialize from settings update: \(error.localizedDescription)")
+                }
+            }
         }
     }
 
@@ -162,30 +165,25 @@ class AudioManager {
     }
 
     private func handleKeyFlags(_ event: NSEvent) {
-        _ = NSEvent.ModifierFlags.function
-        _ = NSEvent.ModifierFlags.shift
+        let isFnPressed = event.modifierFlags.contains(.function)
+        let isShiftPressed = event.modifierFlags.contains(.shift)
 
-        DispatchQueue.main.async {
-            let isFnPressed = event.modifierFlags.contains(.function)
-            let isShiftPressed = event.modifierFlags.contains(.shift)
+        if isFnPressed != self.isFnKeyPressed {
+            self.isFnKeyPressed = isFnPressed
 
-            if isFnPressed != self.isFnKeyPressed {
-                self.isFnKeyPressed = isFnPressed
-
-                if isFnPressed {
-                    if !self.isRecording && !self.hasPendingPaste {
-                        self.wasShiftPressedOnStart = isShiftPressed
-                        self.startRecording()
-                    }
-                } else {
-                    if self.isRecording {
-                        self.stopRecording()
-                    }
+            if isFnPressed {
+                if !self.isRecording && !self.hasPendingPaste {
+                    self.wasShiftPressedOnStart = isShiftPressed
+                    self.startRecording()
+                }
+            } else {
+                if self.isRecording {
+                    self.stopRecording()
                 }
             }
-
-            self.isShiftKeyPressed = isShiftPressed
         }
+
+        self.isShiftKeyPressed = isShiftPressed
     }
 
     private func startRecording() {
@@ -302,21 +300,22 @@ class AudioManager {
                     // Ensure VAD is initialized (lazy initialization)
                     if vadManager == nil {
                         print("VAD: Initializing on-demand for streaming mode")
-                        setupVADManager()
-
-                        // Start listening after a brief delay to allow initialization
                         Task {
-                            try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
-                            await MainActor.run {
-                                self.vadManager?.startListening()
-                                // Update cache after initialization
-                                self.cachedVADManager = self.vadManager
+                            do {
+                                try await setupVADManager()
+                                print("VAD: Initialization complete, starting listening")
+                                await MainActor.run {
+                                    self.vadManager?.startListening()
+                                    self.cachedVADManager = self.vadManager
+                                }
+                            } catch {
+                                print("VAD: Initialization failed, disabling VAD mode: \(error.localizedDescription)")
+                                // Continue without VAD - will use batch mode
                             }
                         }
                     } else {
                         // VAD already initialized, start immediately
                         vadManager?.startListening()
-                        // Update cache in case it was nil before
                         cachedVADManager = vadManager
                     }
                 }
@@ -424,20 +423,22 @@ class AudioManager {
                 // Ensure VAD is initialized (lazy initialization)
                 if vadManager == nil {
                     print("VAD: Initializing on-demand for cloud streaming mode")
-                    setupVADManager()
-
-                    // Start listening after a brief delay to allow initialization
                     Task {
-                        try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
-                        await MainActor.run {
-                            self.vadManager?.startListening()
-                            // Update cache after initialization
-                            self.cachedVADManager = self.vadManager
+                        do {
+                            try await setupVADManager()
+                            print("VAD: Initialization complete, starting listening")
+                            await MainActor.run {
+                                self.vadManager?.startListening()
+                                self.cachedVADManager = self.vadManager
+                            }
+                        } catch {
+                            print("VAD: Initialization failed, disabling VAD mode: \(error.localizedDescription)")
+                            // Continue without VAD - will use batch mode
                         }
                     }
                 } else {
+                    // VAD already initialized, start immediately
                     vadManager?.startListening()
-                    // Update cache in case it was nil before
                     cachedVADManager = vadManager
                 }
             }
@@ -661,16 +662,14 @@ class AudioManager {
 
     @available(macOS 26.0, *)
     private func stopAppleSpeechAnalyzerSession() {
-        // Signal end of audio input and wait for final results
+        // Signal end of audio input and stop session
         if let analyzer = appleSpeechAnalyzer as? AppleSpeechAnalyzerManager {
             Task { @MainActor in
                 analyzer.finishAudioInput()
-                print("Apple SpeechAnalyzer: Audio input finished, waiting for final results...")
-
-                // Give analyzer brief time to emit remaining results (typically immediate)
-                try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
+                print("Apple SpeechAnalyzer: Audio input finished")
 
                 // Stop session to close results stream and trigger final result
+                // Analyzer emits final results immediately, no artificial delay needed
                 await analyzer.stopSession()
             }
         }
@@ -723,137 +722,109 @@ class AudioManager {
             return
         }
 
-        performTranscription(with: service, audioData: audioData)
-    }
-
-    private func performTranscription(with service: TranscriptionService, audioData: Data) {
-        Task { [weak self] in
-            guard let self = self else { return }
-            
-            do {
-                let selectedModel = Settings.shared.transcriptionModel
-                let languageSetting = Settings.shared.transcriptionLanguage
-                let language = languageSetting.isEmpty ? nil : languageSetting
-
-                let response = try await service.transcribe(
-                    audioData: audioData,
-                    fileName: "recording.wav",
-                    model: selectedModel,
-                    language: language,
-                    prompt: nil,
-                    responseFormat: "json",  // Faster response format
-                    temperature: nil,       // Use API default
-                    timestampGranularities: nil  // Skip timestamps for speed
-                )
-                
-                await MainActor.run {
-                    // Process transcribed text sequentially: transcription → transformation → paste
-                    self.pasteManager.processAndPasteText(
-                        response.text, withAI: self.wasShiftPressedOnStart)
-                }
-
-            } catch let error as TranscriptionError {
-                await MainActor.run {
-                    self.delegate?.audioManager(didReceiveError: error)
-                }
-            } catch {
-                await MainActor.run {
-                    self.delegate?.audioManager(
-                        didReceiveError: AudioManagerError.transcriptionFailed(
-                            error.localizedDescription))
-                }
-            }
+        Task {
+            await performTranscription(with: service, audioData: audioData)
         }
     }
 
-    private func performStreamingTranscription(audioData: Data, duration: Double) {
-        Task { [weak self] in
-            guard let self = self else { return }
+    private func performTranscription(with service: TranscriptionService, audioData: Data) async {
+        do {
+            let selectedModel = Settings.shared.transcriptionModel
+            let languageSetting = Settings.shared.transcriptionLanguage
+            let language = languageSetting.isEmpty ? nil : languageSetting
 
-            // Skip transcription if already processing to avoid overwhelming API
-            if self.isProcessingTranscription {
-                print("VAD: Skipping chunk transcription - already processing")
-                return
-            }
+            let response = try await service.transcribe(
+                audioData: audioData,
+                fileName: "recording.wav",
+                model: selectedModel,
+                language: language,
+                prompt: nil,
+                responseFormat: "json",  // Faster response format
+                temperature: nil,       // Use API default
+                timestampGranularities: nil  // Skip timestamps for speed
+            )
 
-            self.isProcessingTranscription = true
+            // Process transcribed text sequentially: transcription → transformation → paste
+            await self.pasteManager.processAndPasteText(
+                response.text, withAI: self.wasShiftPressedOnStart)
 
-            guard let service = self.transcriptionService else {
-                await MainActor.run {
-                    self.delegate?.audioManager(didReceiveError: AudioManagerError.transcriptionServiceMissing)
-                    self.isProcessingTranscription = false
-                }
-                return
-            }
-
-            do {
-                let selectedModel = Settings.shared.transcriptionModel
-                let languageSetting = Settings.shared.transcriptionLanguage
-                let language = languageSetting.isEmpty ? nil : languageSetting
-
-                let response = try await service.transcribe(
-                    audioData: audioData,
-                    fileName: "chunk_\(UUID().uuidString).wav",
-                    model: selectedModel,
-                    language: language,
-                    prompt: nil,
-                    responseFormat: "json",
-                    temperature: nil,
-                    timestampGranularities: nil
-                )
-
-                await MainActor.run {
-                    // Stream the text - append to existing content instead of replacing
-                    self.pasteManager.appendStreamingText(
-                        response.text, withAI: self.wasShiftPressedOnStart)
-                    self.isProcessingTranscription = false
-                }
-
-            } catch let error as TranscriptionError {
-                await MainActor.run {
-                    self.delegate?.audioManager(didReceiveError: error)
-                    self.isProcessingTranscription = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.delegate?.audioManager(
-                        didReceiveError: AudioManagerError.transcriptionFailed(
-                            error.localizedDescription))
-                    self.isProcessingTranscription = false
-                }
-            }
+        } catch let error as TranscriptionError {
+            self.delegate?.audioManager(didReceiveError: error)
+        } catch {
+            self.delegate?.audioManager(
+                didReceiveError: AudioManagerError.transcriptionFailed(
+                    error.localizedDescription))
         }
     }
 
-    private func performParakeetStreamingTranscription(audioSamples: [Float], duration: Double) {
-        Task { [weak self] in
-            guard let self = self else { return }
-
-            // Skip transcription if already processing
-            if self.isProcessingTranscription {
-                print("Parakeet: Skipping chunk transcription - already processing")
-                return
-            }
-
-            self.isProcessingTranscription = true
-
-            // Get Parakeet manager
-            guard let manager = self.parakeetManager as? ParakeetTranscriptionManager else {
-                await MainActor.run {
-                    self.isProcessingTranscription = false
-                }
-                return
-            }
-
-            print("Parakeet: Transcribing chunk with \(audioSamples.count) samples")
-
-            // Transcribe the chunk (this calls the delegate internally)
-            let _ = await manager.transcribeChunk(audioSamples)
-
-            await MainActor.run {
-                self.isProcessingTranscription = false
-            }
+    private func performStreamingTranscription(audioData: Data, duration: Double) async {
+        // Skip transcription if already processing to avoid overwhelming API
+        if self.isProcessingTranscription {
+            print("VAD: Skipping chunk transcription - already processing")
+            return
         }
+
+        self.isProcessingTranscription = true
+
+        guard let service = self.transcriptionService else {
+            self.delegate?.audioManager(didReceiveError: AudioManagerError.transcriptionServiceMissing)
+            self.isProcessingTranscription = false
+            return
+        }
+
+        do {
+            let selectedModel = Settings.shared.transcriptionModel
+            let languageSetting = Settings.shared.transcriptionLanguage
+            let language = languageSetting.isEmpty ? nil : languageSetting
+
+            let response = try await service.transcribe(
+                audioData: audioData,
+                fileName: "chunk_\(UUID().uuidString).wav",
+                model: selectedModel,
+                language: language,
+                prompt: nil,
+                responseFormat: "json",
+                temperature: nil,
+                timestampGranularities: nil
+            )
+
+            // Stream the text - append to existing content instead of replacing
+            await self.pasteManager.appendStreamingText(
+                response.text, withAI: self.wasShiftPressedOnStart)
+            self.isProcessingTranscription = false
+
+        } catch let error as TranscriptionError {
+            self.delegate?.audioManager(didReceiveError: error)
+            self.isProcessingTranscription = false
+        } catch {
+            self.delegate?.audioManager(
+                didReceiveError: AudioManagerError.transcriptionFailed(
+                    error.localizedDescription))
+            self.isProcessingTranscription = false
+        }
+    }
+
+    private func performParakeetStreamingTranscription(audioSamples: [Float], duration: Double) async {
+        // Skip transcription if already processing
+        if self.isProcessingTranscription {
+            print("Parakeet: Skipping chunk transcription - already processing")
+            return
+        }
+
+        self.isProcessingTranscription = true
+
+        // Get Parakeet manager
+        guard let manager = self.parakeetManager as? ParakeetTranscriptionManager else {
+            self.isProcessingTranscription = false
+            return
+        }
+
+        print("Parakeet: Transcribing chunk with \(audioSamples.count) samples")
+
+        // Transcribe the chunk (this calls the delegate internally)
+        let _ = await manager.transcribeChunk(audioSamples)
+
+        self.isProcessingTranscription = false
     }
 
     private func pcmBuffersToWavData(buffers: [AVAudioPCMBuffer], format: AVAudioFormat) -> Data? {
@@ -930,7 +901,9 @@ extension AudioManager: VADManagerDelegate {
 
         // Route to on-device transcription (Parakeet)
         if provider == .parakeet {
-            performParakeetStreamingTranscription(audioSamples: samples, duration: duration)
+            Task {
+                await performParakeetStreamingTranscription(audioSamples: samples, duration: duration)
+            }
         }
     }
 
@@ -948,7 +921,9 @@ extension AudioManager: VADManagerDelegate {
 
         // Route to cloud APIs only (Parakeet uses Float samples now)
         if provider != .parakeet && !provider.isOnDevice {
-            performStreamingTranscription(audioData: audioData, duration: duration)
+            Task {
+                await performStreamingTranscription(audioData: audioData, duration: duration)
+            }
         }
     }
 
@@ -977,9 +952,7 @@ extension AudioManager: AppleSpeechAnalyzerDelegate {
 
         // Batch mode: Process complete text with all refinements (same as Parakeet batch mode)
         // Provides better quality by including all refinements + full context for AI processing
-        await MainActor.run {
-            self.pasteManager.processAndPasteText(text, withAI: self.wasShiftPressedOnStart)
-        }
+        await self.pasteManager.processAndPasteText(text, withAI: self.wasShiftPressedOnStart)
     }
 
     func speechAnalyzerWillDownloadLanguageModel(for locale: Locale) async {
@@ -1054,18 +1027,14 @@ extension AudioManager: ParakeetTranscriptionDelegate {
         print("Parakeet: Partial transcription - '\(text)'")
 
         // Stream the text - append to existing content instead of replacing
-        await MainActor.run {
-            self.pasteManager.appendStreamingText(text, withAI: self.wasShiftPressedOnStart)
-        }
+        await self.pasteManager.appendStreamingText(text, withAI: self.wasShiftPressedOnStart)
     }
 
     func parakeet(didReceiveFinalTranscription text: String) async {
         print("Parakeet: Final transcription - '\(text)'")
 
         // Process and paste the text
-        await MainActor.run {
-            self.pasteManager.processAndPasteText(text, withAI: self.wasShiftPressedOnStart)
-        }
+        await self.pasteManager.processAndPasteText(text, withAI: self.wasShiftPressedOnStart)
     }
 
     func parakeetWillDownloadModels() async {

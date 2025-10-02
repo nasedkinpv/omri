@@ -906,7 +906,7 @@ struct AboutSettingsContent: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            Text("Version 1.4.0 • Build 2025.10")
+                            Text(AppVersion.display)
                                 .font(.caption)
                                 .foregroundColor(.secondary.opacity(0.7))
                         }

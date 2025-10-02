@@ -98,6 +98,7 @@ CLAUDE.md
 LANDING.md
 ASSETS.md
 SPEECHANALYZER_INTEGRATION.md
+VERSION_BUMP.md
 .claude/
 .claude-flow/
 .hive-mind/
