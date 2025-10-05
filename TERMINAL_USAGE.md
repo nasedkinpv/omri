@@ -157,19 +157,30 @@ Text appears: tail -100 /var/log/nginx/error.log | grep "$(date -d yesterday +%Y
 ### SSH Connection Issues
 
 **"Host key verification failed"**
-✅ Fixed! App now has .ssh/ access
-- Entitlements updated for known_hosts
-- Rebuild app if you see this error
+✅ Fixed! Multiple improvements:
+- Entitlements: `/.ssh/` access (note leading slash!)
+- SSH option: `-o StrictHostKeyChecking=accept-new`
+- Automatically accepts new host keys
+- App can now read/write `~/.ssh/known_hosts`
+
+**"SSH key picker shows no files"**
+✅ Fixed!
+- Now uses `getpwuid()` to find real home directory
+- Sandbox mode returns container path, need actual `~/.ssh/`
+- NSOpenPanel shows hidden files
+- Files appear in dropdown + Browse button works
 
 **"Permission denied"**
-- Check username
-- Verify SSH key permissions (`chmod 600 ~/.ssh/id_rsa`)
-- Try password authentication
+- Check username is correct
+- Verify SSH key permissions: `chmod 600 ~/.ssh/id_rsa`
+- Try password authentication first to verify connection
+- Check server allows key authentication (`PubkeyAuthentication yes`)
 
 **"Connection refused"**
-- Verify host is correct
-- Check port (default 22)
-- Ensure SSH server is running
+- Verify host is correct (try `ping your-server.com`)
+- Check port (default 22, some use 2222)
+- Ensure SSH server is running: `systemctl status sshd`
+- Check firewall allows SSH connections
 
 ### Dictation Issues
 
@@ -225,10 +236,30 @@ Browse → ~/.ssh/id_ed25519
 Connect (no password needed!)
 ```
 
-### Custom SSH Arguments
+### SSH Options & Arguments
 
-**Current:** Basic ssh command with port
-**Future:** Will support advanced options in connection profile
+**Current arguments:**
+```bash
+/usr/bin/ssh user@host -p 22 -o StrictHostKeyChecking=accept-new
+```
+
+**StrictHostKeyChecking=accept-new:**
+- Automatically accepts new host keys
+- Updates `~/.ssh/known_hosts` on first connection
+- Prevents "Host key verification failed" errors
+- Still validates known hosts on subsequent connections
+
+**With SSH Key:**
+```bash
+/usr/bin/ssh user@host -p 22 -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519
+```
+
+**Future:** Will support advanced options:
+- Custom identity files
+- Port forwarding (-L, -R)
+- Compression (-C)
+- Verbose mode (-v)
+- ProxyJump for bastion hosts
 
 ---
 
@@ -261,16 +292,32 @@ AudioManager → PasteManager → Terminal detection → sendText()
 - Groq (llama-3.3-70b)
 - OpenAI (gpt-5)
 
-### File Access
+### File Access & Security
 
-**Entitlements:**
-- `com.apple.security.files.user-selected.read-write` - User file access
-- `.ssh/` temporary exception - SSH key and known_hosts access
+**Entitlements (VoiceDictation.entitlements):**
+- `com.apple.security.files.user-selected.read-write` - User file access via NSOpenPanel
+- `com.apple.security.temporary-exception.files.home-relative-path.read-only`
+  - Value: `/.ssh/` (leading slash required!)
+  - Trailing slash required per Apple docs
+  - Read-only sufficient for SSH keys + known_hosts
 
 **Why needed:**
-- SSH requires reading `~/.ssh/known_hosts`
-- SSH keys must be readable
-- Without: "Operation not permitted" error
+- SSH requires reading `~/.ssh/known_hosts` to verify host keys
+- SSH keys must be readable (`id_rsa`, `id_ed25519`, etc.)
+- Without entitlements: "Operation not permitted" error
+
+**Technical Details:**
+- Sandboxed apps can't access `~/.ssh/` by default
+- `homeDirectoryForCurrentUser` returns container path in sandbox
+- Must use `getpwuid(getuid())` to get real home directory
+- SSH process inherits app's sandbox constraints
+- Entitlement grants subprocess (ssh) access too
+
+**Security:**
+- Read-only access (not read-write) for better security
+- Only `~/.ssh/` directory accessible, not entire home
+- Temporary exception approved by Apple for SSH clients
+- Not suitable for Mac App Store distribution
 
 ---
 
