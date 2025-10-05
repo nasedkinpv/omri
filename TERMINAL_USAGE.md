@@ -156,12 +156,13 @@ Text appears: tail -100 /var/log/nginx/error.log | grep "$(date -d yesterday +%Y
 
 ### SSH Connection Issues
 
-**"Host key verification failed"**
+**"Host key verification failed" or "Failed to add host to known_hosts"**
 ✅ Fixed! Multiple improvements:
-- Entitlements: `/.ssh/` access (note leading slash!)
+- Entitlements: `/.ssh/` with read-write access (note leading slash!)
 - SSH option: `-o StrictHostKeyChecking=accept-new`
 - Automatically accepts new host keys
-- App can now read/write `~/.ssh/known_hosts`
+- App can now **write** to `~/.ssh/known_hosts` (not just read)
+- Known_hosts file created if missing
 
 **"SSH key picker shows no files"**
 ✅ Fixed!
@@ -170,11 +171,19 @@ Text appears: tail -100 /var/log/nginx/error.log | grep "$(date -d yesterday +%Y
 - NSOpenPanel shows hidden files
 - Files appear in dropdown + Browse button works
 
+**"Too many authentication failures"**
+✅ Fixed!
+- Added `-o IdentitiesOnly=yes` to prevent trying all keys
+- Password mode: explicitly disables public key auth
+- Key mode: only uses the specified key
+- No longer tries every key in `~/.ssh/`
+
 **"Permission denied"**
-- Check username is correct
-- Verify SSH key permissions: `chmod 600 ~/.ssh/id_rsa`
-- Try password authentication first to verify connection
-- Check server allows key authentication (`PubkeyAuthentication yes`)
+- Verify username is correct
+- For password auth: server must allow password login
+- For key auth: your public key must be in `~/.ssh/authorized_keys` on server
+- Check key permissions: `chmod 600 ~/.ssh/id_rsa`
+- Check server config allows your auth method
 
 **"Connection refused"**
 - Verify host is correct (try `ping your-server.com`)
@@ -296,10 +305,10 @@ AudioManager → PasteManager → Terminal detection → sendText()
 
 **Entitlements (VoiceDictation.entitlements):**
 - `com.apple.security.files.user-selected.read-write` - User file access via NSOpenPanel
-- `com.apple.security.temporary-exception.files.home-relative-path.read-only`
+- `com.apple.security.temporary-exception.files.home-relative-path.read-write`
   - Value: `/.ssh/` (leading slash required!)
   - Trailing slash required per Apple docs
-  - Read-only sufficient for SSH keys + known_hosts
+  - **Read-write required** - SSH must write to known_hosts
 
 **Why needed:**
 - SSH requires reading `~/.ssh/known_hosts` to verify host keys
@@ -314,10 +323,11 @@ AudioManager → PasteManager → Terminal detection → sendText()
 - Entitlement grants subprocess (ssh) access too
 
 **Security:**
-- Read-only access (not read-write) for better security
+- Read-write access required for SSH to update known_hosts
 - Only `~/.ssh/` directory accessible, not entire home
 - Temporary exception approved by Apple for SSH clients
 - Not suitable for Mac App Store distribution
+- Sandboxed subprocess (ssh) inherits file access
 
 ---
 
