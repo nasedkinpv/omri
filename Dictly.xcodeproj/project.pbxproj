@@ -11,6 +11,7 @@
 		470D96BE2E8AC5B80046CF66 /* VADManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470D96BD2E8AC5B80046CF66 /* VADManager.swift */; };
 		470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 470D96C02E8AC65D0046CF66 /* FluidAudio */; };
 		473A83D92E4E84D500EA0E27 /* ModelConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473A83D82E4E84D500EA0E27 /* ModelConfiguration.swift */; };
+		474C1E8E2E92D1F800F33E30 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 474C1E8D2E92D1F800F33E30 /* SwiftTerm */; };
 		47A49FF12DD278D4009E78D8 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FEC2DD278D4009E78D8 /* TranscriptionService.swift */; };
 		47A49FF22DD278D4009E78D8 /* FormattingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE32DD278D4009E78D8 /* FormattingContext.swift */; };
 		47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE12DD278D4009E78D8 /* AudioManager.swift */; };
@@ -78,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				474C1E8E2E92D1F800F33E30 /* SwiftTerm in Frameworks */,
 				470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -156,6 +158,7 @@
 			name = Dictly;
 			packageProductDependencies = (
 				470D96C02E8AC65D0046CF66 /* FluidAudio */,
+				474C1E8D2E92D1F800F33E30 /* SwiftTerm */,
 			);
 			productName = Dictly;
 			productReference = DA79FD132CDEE6650077AF85 /* Dictly.app */;
@@ -187,6 +190,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DA79FD142CDEE6650077AF85 /* Products */;
@@ -478,6 +482,14 @@
 				kind = branch;
 			};
 		};
+		474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -485,6 +497,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		474C1E8D2E92D1F800F33E30 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

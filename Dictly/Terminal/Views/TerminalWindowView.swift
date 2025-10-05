@@ -10,11 +10,10 @@
 
 #if os(macOS)
 import SwiftUI
-// import SwiftTerm - will be added
+import SwiftTerm
 
 struct TerminalWindowView: View {
-    // Will accept LocalProcessTerminalView once SwiftTerm is available
-    // let terminalView: LocalProcessTerminalView
+    let terminalView: LocalProcessTerminalView
     let connection: SSHConnection
 
     @State private var isDictating = false
@@ -22,22 +21,9 @@ struct TerminalWindowView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Terminal view (will be wrapped NSView)
-            // TerminalViewRepresentable(terminalView: terminalView)
-            //     .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            // Placeholder until SwiftTerm is added
-            Color.black
-                .overlay(
-                    VStack {
-                        Text("Terminal Output Area")
-                            .foregroundColor(.green)
-                            .font(.system(.body, design: .monospaced))
-                        Text("SwiftTerm integration pending")
-                            .foregroundColor(.gray)
-                            .font(.caption)
-                    }
-                )
+            // Terminal view
+            TerminalViewRepresentable(terminalView: terminalView)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Bottom toolbar
             HStack(spacing: 12) {
@@ -134,7 +120,7 @@ struct TerminalWindowView: View {
 
         // Trigger AudioManager (reuse existing dictation system)
         Task { @MainActor in
-            if let audioManager = AppDelegate.shared?.getAudioManager() {
+            if AppDelegate.shared?.getAudioManager() != nil {
                 // AudioManager will handle the recording
                 // Result will come back through delegate
                 print("Terminal: Starting dictation via AudioManager")
@@ -142,8 +128,6 @@ struct TerminalWindowView: View {
         }
     }
 }
-
-/* Will be uncommented once SwiftTerm is available:
 
 // NSViewRepresentable to embed LocalProcessTerminalView
 struct TerminalViewRepresentable: NSViewRepresentable {
@@ -158,16 +142,16 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     }
 }
 
-*/
-
-#Preview {
-    TerminalWindowView(
-        connection: SSHConnection(
-            host: "example.com",
-            username: "user"
-        )
-    )
-    .frame(width: 800, height: 600)
-}
+// Preview disabled - requires actual LocalProcessTerminalView instance
+// #Preview {
+//     TerminalWindowView(
+//         terminalView: LocalProcessTerminalView(frame: .zero),
+//         connection: SSHConnection(
+//             host: "example.com",
+//             username: "user"
+//         )
+//     )
+//     .frame(width: 800, height: 600)
+// }
 
 #endif
