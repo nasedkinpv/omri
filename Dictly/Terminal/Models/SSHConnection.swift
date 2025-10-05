@@ -48,11 +48,20 @@ struct SSHConnection: Identifiable, Codable, Hashable {
             "\(username)@\(host)",
             "-p", "\(port)",
             // Accept new host keys without prompting
-            "-o", "StrictHostKeyChecking=accept-new"
+            "-o", "StrictHostKeyChecking=accept-new",
+            // Prevent "too many authentication failures"
+            "-o", "IdentitiesOnly=yes"
         ]
 
         if authMethod == .key, let keyPath = keyPath {
+            // Use specific key
             args.append(contentsOf: ["-i", keyPath])
+        } else {
+            // Password auth - don't try any keys
+            args.append(contentsOf: [
+                "-o", "PubkeyAuthentication=no",
+                "-o", "PasswordAuthentication=yes"
+            ])
         }
 
         return ("/usr/bin/ssh", args)
