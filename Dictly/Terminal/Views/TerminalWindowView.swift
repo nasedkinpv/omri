@@ -27,14 +27,13 @@ struct TerminalWindowView: View {
 
             // Bottom toolbar
             HStack(spacing: 12) {
-                // Dictation button
-                Button(action: startDictation) {
+                // Dictation button (toggle)
+                Button(action: toggleDictation) {
                     Label(
-                        isDictating ? "Listening..." : "Dictate",
-                        systemImage: isDictating ? "waveform" : "mic.fill"
+                        isDictating ? "Stop" : "Dictate",
+                        systemImage: isDictating ? "stop.fill" : "mic.fill"
                     )
                 }
-                .disabled(isDictating)
                 .buttonStyle(.borderedProminent)
                 .tint(isDictating ? .red : .blue)
 
@@ -68,6 +67,13 @@ struct TerminalWindowView: View {
         }
         .popover(isPresented: $showingHelp) {
             helpPopover
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .terminalDidReceiveText)) { _ in
+            // Text was received in terminal - recording is done
+            if isDictating {
+                print("Terminal: Received text, resetting dictation state")
+                isDictating = false
+            }
         }
     }
 
@@ -115,17 +121,43 @@ struct TerminalWindowView: View {
         .frame(width: 220)
     }
 
-    private func startDictation() {
-        isDictating = true
+    private func toggleDictation() {
+        if isDictating {
+            stopDictation()
+        } else {
+            startDictation()
+        }
+    }
 
-        // Trigger AudioManager (reuse existing dictation system)
-        Task { @MainActor in
-            if AppDelegate.shared?.getAudioManager() != nil {
-                // AudioManager will handle the recording
-                // Result will come back through delegate
-                print("Terminal: Starting dictation via AudioManager")
+    private func startDictation() {
+        guard !isDictating else { return }
+
+        // Start recording via AudioManager
+        if let audioManager = AppDelegate.shared?.getAudioManager() {
+            isDictating = true
+            audioManager.startRecording()
+            print("Terminal: Started dictation via AudioManager")
+
+            // Monitor for when recording finishes
+            Task { @MainActor in
+                // Wait for transcription to complete
+                // AudioManager will automatically call PasteManager when done
+                // PasteManager will detect terminal is active and send text here
+                // After 30 seconds max, auto-reset (safety)
+                try? await Task.sleep(nanoseconds: 30_000_000_000) // 30s timeout
+                if isDictating {
+                    print("Terminal: Auto-stopping dictation after timeout")
+                    stopDictation()
+                }
             }
         }
+    }
+
+    private func stopDictation() {
+        guard isDictating else { return }
+        print("Terminal: Stopping dictation")
+        isDictating = false
+        AppDelegate.shared?.getAudioManager()?.stopRecording()
     }
 }
 

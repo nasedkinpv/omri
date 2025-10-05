@@ -82,12 +82,23 @@ class TerminalWindowController: NSWindowController {
     /// Send text to terminal (for dictation integration)
     func sendText(_ text: String) {
         terminalView?.send(txt: text)
+
+        // Notify that text was received (for UI state updates)
+        NotificationCenter.default.post(
+            name: .terminalDidReceiveText,
+            object: nil
+        )
     }
 
     /// Check if terminal window is active
     var isTerminalActive: Bool {
         window?.isKeyWindow ?? false
     }
+}
+
+// Notification for text received in terminal
+extension Notification.Name {
+    static let terminalDidReceiveText = Notification.Name("terminalDidReceiveText")
 }
 
 // Placeholder view shown until SwiftTerm is integrated

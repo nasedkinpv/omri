@@ -38,6 +38,15 @@ class PasteManager {
         let shouldUseAI = withAI && Settings.shared.enableAIProcessing
         let processedText = await processText(text, withAI: shouldUseAI)
 
+        // Check if terminal window is active - send to terminal instead of pasting
+        #if os(macOS)
+        if TerminalWindowController.shared.isTerminalActive {
+            TerminalWindowController.shared.sendText(processedText)
+            delegate?.pasteManagerDidFinishProcessing()
+            return
+        }
+        #endif
+
         copyToClipboard(processedText)
         performPaste()  // Paste immediately after clipboard copy
         delegate?.pasteManagerDidFinishProcessing()
@@ -47,6 +56,14 @@ class PasteManager {
         // For streaming, process AI transformation if needed but don't notify start/finish
         let shouldUseAI = withAI && Settings.shared.enableAIProcessing
         let processedText = await processText(text, withAI: shouldUseAI)
+
+        // Check if terminal window is active - send to terminal instead
+        #if os(macOS)
+        if TerminalWindowController.shared.isTerminalActive {
+            TerminalWindowController.shared.sendText(processedText)
+            return
+        }
+        #endif
 
         // Append to existing text instead of replacing
         appendTextToCurrentPosition(processedText)

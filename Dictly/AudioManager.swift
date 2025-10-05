@@ -186,7 +186,8 @@ class AudioManager {
         self.isShiftKeyPressed = isShiftPressed
     }
 
-    private func startRecording() {
+    // Public method to manually trigger recording (for dictation button)
+    func startRecording() {
         // Check provider requirements
         let provider = Settings.shared.transcriptionProvider
         let needsTranscriptionService = !provider.isOnDevice
@@ -628,7 +629,8 @@ class AudioManager {
         return (status == .haveData || status == .endOfStream) ? outputBuffer : nil
     }
 
-    private func stopRecording() {
+    // Public method to manually stop recording
+    func stopRecording() {
         guard isRecording else { return }
 
         audioEngine.inputNode.removeTap(onBus: 0)
