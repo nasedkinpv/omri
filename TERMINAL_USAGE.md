@@ -247,24 +247,41 @@ Connect (no password needed!)
 
 ### SSH Options & Arguments
 
-**Current arguments:**
+**Password Authentication:**
 ```bash
-/usr/bin/ssh user@host -p 22 -o StrictHostKeyChecking=accept-new
+/usr/bin/ssh user@host -p 22 \
+  -o StrictHostKeyChecking=accept-new \
+  -o IdentitiesOnly=yes \
+  -o PubkeyAuthentication=no \
+  -o PasswordAuthentication=yes
 ```
 
-**StrictHostKeyChecking=accept-new:**
-- Automatically accepts new host keys
-- Updates `~/.ssh/known_hosts` on first connection
-- Prevents "Host key verification failed" errors
-- Still validates known hosts on subsequent connections
-
-**With SSH Key:**
+**SSH Key Authentication:**
 ```bash
-/usr/bin/ssh user@host -p 22 -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519
+/usr/bin/ssh user@host -p 22 \
+  -o StrictHostKeyChecking=accept-new \
+  -o IdentitiesOnly=yes \
+  -i ~/.ssh/id_ed25519
 ```
+
+**Option Explanations:**
+
+- `StrictHostKeyChecking=accept-new`
+  - Automatically accepts new host keys
+  - Updates `~/.ssh/known_hosts` on first connection
+  - Still validates known hosts on subsequent connections
+
+- `IdentitiesOnly=yes`
+  - Only use explicitly specified keys
+  - Prevents trying all keys in `~/.ssh/`
+  - Fixes "Too many authentication failures" error
+
+- `PubkeyAuthentication=no` (password mode only)
+  - Disables key-based authentication
+  - Forces password prompt
+  - Prevents unwanted key attempts
 
 **Future:** Will support advanced options:
-- Custom identity files
 - Port forwarding (-L, -R)
 - Compression (-C)
 - Verbose mode (-v)
