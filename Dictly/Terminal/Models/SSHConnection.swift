@@ -44,7 +44,12 @@ struct SSHConnection: Identifiable, Codable, Hashable {
 
     /// SSH command components
     var sshCommand: (executable: String, args: [String]) {
-        var args = ["\(username)@\(host)", "-p", "\(port)"]
+        var args = [
+            "\(username)@\(host)",
+            "-p", "\(port)",
+            // Accept new host keys without prompting
+            "-o", "StrictHostKeyChecking=accept-new"
+        ]
 
         if authMethod == .key, let keyPath = keyPath {
             args.append(contentsOf: ["-i", keyPath])

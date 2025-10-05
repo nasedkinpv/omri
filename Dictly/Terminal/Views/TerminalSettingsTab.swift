@@ -232,18 +232,30 @@ struct SSHKeyPickerView: View {
     }
 
     private func loadSSHKeys() {
-        let sshDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".ssh")
+        // Use getpwuid to get real home directory (sandbox returns container path)
+        guard let pw = getpwuid(getuid()),
+              let homeDir = String(validatingUTF8: pw.pointee.pw_dir) else {
+            print("SSH Key Picker: Could not get home directory")
+            return
+        }
+
+        let sshDir = URL(fileURLWithPath: homeDir).appendingPathComponent(".ssh")
+        print("SSH Key Picker: Looking for keys in \(sshDir.path)")
 
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: sshDir,
             includingPropertiesForKeys: nil
-        ) else { return }
+        ) else {
+            print("SSH Key Picker: Could not read .ssh directory")
+            return
+        }
 
         availableKeys = files.filter { url in
             let name = url.lastPathComponent
             return !name.hasSuffix(".pub") && !name.contains("known_hosts") && !name.contains("config")
         }
+
+        print("SSH Key Picker: Found \(availableKeys.count) keys")
     }
 
     private func selectKeyFile() {
@@ -251,11 +263,20 @@ struct SSHKeyPickerView: View {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".ssh")
+        panel.allowsOtherFileTypes = true
+        panel.showsHiddenFiles = true  // Show hidden files like SSH keys
+
+        // Use getpwuid to get real home directory
+        if let pw = getpwuid(getuid()),
+           let homeDir = String(validatingUTF8: pw.pointee.pw_dir) {
+            let sshDir = URL(fileURLWithPath: homeDir).appendingPathComponent(".ssh")
+            panel.directoryURL = sshDir
+            print("SSH Key Picker: Opening panel at \(sshDir.path)")
+        }
 
         if panel.runModal() == .OK {
             selectedPath = panel.url?.path
+            print("SSH Key Picker: Selected key at \(panel.url?.path ?? "nil")")
         }
     }
 }
