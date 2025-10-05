@@ -65,6 +65,14 @@
 		DA79FD132CDEE6650077AF85 /* Dictly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dictly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		474C1E862E92D14F00F33E30 /* Terminal */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Terminal;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		DA79FD102CDEE6650077AF85 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -80,6 +88,7 @@
 		47A49FF02DD278D4009E78D8 /* Dictly */ = {
 			isa = PBXGroup;
 			children = (
+				474C1E862E92D14F00F33E30 /* Terminal */,
 				47EF729F2E8EF544002D0147 /* Version.swift */,
 				47EF729D2E8EE66A002D0147 /* HTTPServiceProtocol.swift */,
 				4706C4F42E8EAF5D0003BD85 /* ParakeetTranscriptionManager.swift */,
@@ -140,6 +149,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				474C1E862E92D14F00F33E30 /* Terminal */,
 			);
 			name = Dictly;
 			packageProductDependencies = (
