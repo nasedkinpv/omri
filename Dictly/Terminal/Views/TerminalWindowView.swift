@@ -43,6 +43,12 @@ struct TerminalWindowView: View {
                 }
                 .buttonStyle(.bordered)
 
+                // Enter button (for iPad/touch-only use)
+                Button(action: sendEnter) {
+                    Label("Enter", systemImage: "return")
+                }
+                .buttonStyle(.bordered)
+
                 Divider()
                     .frame(height: 20)
 
@@ -163,6 +169,10 @@ struct TerminalWindowView: View {
 
     private func clearInput() {
         TerminalWindowController.shared.clearInput()
+    }
+
+    private func sendEnter() {
+        TerminalWindowController.shared.sendEnter()
     }
 }
 

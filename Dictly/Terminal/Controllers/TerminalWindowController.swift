@@ -99,6 +99,13 @@ class TerminalWindowController: NSWindowController {
         print("Terminal: Cleared input line")
     }
 
+    /// Send Enter key to terminal (execute command)
+    func sendEnter() {
+        // Send newline character to execute the current command
+        terminalView?.send(txt: "\n")
+        print("Terminal: Sent Enter")
+    }
+
     /// Check if terminal window is active
     var isTerminalActive: Bool {
         window?.isKeyWindow ?? false
