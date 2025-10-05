@@ -11,15 +11,13 @@
 #if os(macOS)
 import Cocoa
 import SwiftUI
-// SwiftTerm will be imported once added as dependency
-// import SwiftTerm
+import SwiftTerm
 
 @MainActor
 class TerminalWindowController: NSWindowController {
     static let shared = TerminalWindowController()
 
-    // Will be LocalProcessTerminalView once SwiftTerm is added
-    private var terminalView: NSView?
+    private var terminalView: LocalProcessTerminalView?
     private var currentConnection: SSHConnection?
 
     convenience init() {
@@ -49,11 +47,6 @@ class TerminalWindowController: NSWindowController {
     func connect(to connection: SSHConnection) {
         currentConnection = connection
 
-        // TODO: Replace with actual LocalProcessTerminalView implementation
-        // once SwiftTerm dependency is added
-
-        /* Commented out until SwiftTerm is available:
-
         let terminalView = LocalProcessTerminalView(frame: .zero)
 
         // Configure terminal appearance
@@ -66,9 +59,7 @@ class TerminalWindowController: NSWindowController {
         let (executable, args) = connection.sshCommand
         terminalView.startProcess(
             executable: executable,
-            args: args,
-            environment: ProcessInfo.processInfo.environment,
-            workingDirectory: nil
+            args: args
         )
 
         // Wrap in SwiftUI with dictation controls
@@ -79,16 +70,9 @@ class TerminalWindowController: NSWindowController {
 
         let hostingView = NSHostingView(rootView: contentView)
         window?.contentView = hostingView
+        window?.title = "Dictly Terminal - \(connection.name)"
 
         self.terminalView = terminalView
-        */
-
-        // Temporary: Show placeholder with connection info
-        let placeholderView = NSHostingView(
-            rootView: TerminalPlaceholderView(connection: connection)
-        )
-        window?.contentView = placeholderView
-        window?.title = "Dictly Terminal - \(connection.name)"
 
         // Show window
         showWindow(nil)
@@ -97,9 +81,7 @@ class TerminalWindowController: NSWindowController {
 
     /// Send text to terminal (for dictation integration)
     func sendText(_ text: String) {
-        // TODO: Implement once SwiftTerm is available
-        // terminalView?.send(txt: text)
-        print("Terminal: Would send text: \(text)")
+        terminalView?.send(txt: text)
     }
 
     /// Check if terminal window is active
