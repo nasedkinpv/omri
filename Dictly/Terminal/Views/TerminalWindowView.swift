@@ -37,6 +37,12 @@ struct TerminalWindowView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(isDictating ? .red : .blue)
 
+                // Clear input button
+                Button(action: clearInput) {
+                    Label("Clear", systemImage: "xmark.circle")
+                }
+                .buttonStyle(.bordered)
+
                 Divider()
                     .frame(height: 20)
 
@@ -50,11 +56,6 @@ struct TerminalWindowView: View {
                 }
 
                 Spacer()
-
-                // Keyboard shortcut hint
-                Text("fn to dictate")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
 
                 Button(action: { showingHelp.toggle() }) {
                     Image(systemName: "questionmark.circle")
@@ -158,6 +159,10 @@ struct TerminalWindowView: View {
         print("Terminal: Stopping dictation")
         isDictating = false
         AppDelegate.shared?.getAudioManager()?.stopRecording()
+    }
+
+    private func clearInput() {
+        TerminalWindowController.shared.clearInput()
     }
 }
 

@@ -90,6 +90,15 @@ class TerminalWindowController: NSWindowController {
         )
     }
 
+    /// Clear current input line in terminal (Ctrl+U)
+    func clearInput() {
+        // Send Ctrl+U control character (ASCII 21)
+        // This is the standard Unix sequence to clear the current input line
+        let ctrlU = "\u{15}"
+        terminalView?.send(txt: ctrlU)
+        print("Terminal: Cleared input line")
+    }
+
     /// Check if terminal window is active
     var isTerminalActive: Bool {
         window?.isKeyWindow ?? false
