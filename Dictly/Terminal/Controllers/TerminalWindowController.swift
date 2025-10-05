@@ -35,12 +35,6 @@ class TerminalWindowController: NSWindowController {
         window.minSize = NSSize(width: 400, height: 300)
 
         self.init(window: window)
-
-        // Set placeholder content until SwiftTerm is added
-        let placeholderView = NSHostingView(
-            rootView: TerminalPlaceholderView()
-        )
-        window.contentView = placeholderView
     }
 
     /// Connect to SSH server and display terminal
@@ -115,42 +109,6 @@ class TerminalWindowController: NSWindowController {
 // Notification for text received in terminal
 extension Notification.Name {
     static let terminalDidReceiveText = Notification.Name("terminalDidReceiveText")
-}
-
-// Placeholder view shown until SwiftTerm is integrated
-struct TerminalPlaceholderView: View {
-    var connection: SSHConnection?
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "terminal.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-
-            Text("Terminal Ready")
-                .font(.title)
-
-            if let connection = connection {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Connection:")
-                        .font(.headline)
-                    Text("Host: \(connection.host)")
-                    Text("User: \(connection.username)")
-                    Text("Port: \(connection.port)")
-                    Text("Auth: \(connection.authMethod.rawValue)")
-                }
-                .padding()
-                .background(Color.secondary.opacity(0.1))
-                .cornerRadius(8)
-            }
-
-            Text("SwiftTerm integration coming next...")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
 }
 
 #endif
