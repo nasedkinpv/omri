@@ -123,6 +123,7 @@ struct SettingsView: View {
     enum SettingsTab: String, CaseIterable {
         case dictation = "Dictation"
         case enhancement = "AI Polish"
+        case terminal = "Terminal"
         case general = "General"
         case about = "About"
     }
@@ -256,6 +257,8 @@ struct SettingsView: View {
                                 currentProvider: $currentProvider,
                                 apiKeyInput: $apiKeyInput
                             )
+                        case .terminal:
+                            TerminalSettingsTab()
                         case .general:
                             GeneralSettingsContent(settings: settings)
                         case .about:
@@ -290,6 +293,7 @@ struct SettingsView: View {
         switch tab {
         case .dictation: return "mic.fill"
         case .enhancement: return "wand.and.stars.inverse"
+        case .terminal: return "terminal.fill"
         case .general: return "gearshape.fill"
         case .about: return "info.circle.fill"
         }
@@ -299,6 +303,7 @@ struct SettingsView: View {
         switch tab {
         case .dictation: return "Configure speech recognition and language settings"
         case .enhancement: return "Set up AI-powered text processing and formatting"
+        case .terminal: return "SSH connections and remote terminal access"
         case .general: return "App behavior and system permissions"
         case .about: return "Version information and acknowledgments"
         }
