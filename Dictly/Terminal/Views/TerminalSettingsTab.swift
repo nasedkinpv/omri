@@ -287,3 +287,31 @@ struct SSHKeyPickerView: View {
     TerminalSettingsTab()
         .frame(width: 600, height: 500)
 }
+
+// MARK: - Window Controller
+
+#if os(macOS)
+import Cocoa
+
+class SSHConnectionsWindowController: NSWindowController {
+    convenience init() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.center()
+        window.setFrameAutosaveName("DictlySSHConnections")
+        window.contentView = NSHostingView(rootView: TerminalSettingsTab())
+        window.title = "SSH Connections"
+        window.titlebarAppearsTransparent = true
+        window.toolbarStyle = .unified
+        window.minSize = NSSize(width: 600, height: 500)
+        window.backgroundColor = NSColor.controlBackgroundColor
+
+        self.init(window: window)
+    }
+}
+#endif
