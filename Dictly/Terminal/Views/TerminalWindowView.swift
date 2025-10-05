@@ -17,7 +17,6 @@ struct TerminalWindowView: View {
     let connection: SSHConnection
 
     @State private var isDictating = false
-    @State private var showingHelp = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,18 +61,9 @@ struct TerminalWindowView: View {
                 }
 
                 Spacer()
-
-                Button(action: { showingHelp.toggle() }) {
-                    Image(systemName: "questionmark.circle")
-                }
-                .buttonStyle(.borderless)
-                .help("Terminal shortcuts")
             }
             .padding(8)
             .background(Color(NSColor.windowBackgroundColor))
-        }
-        .popover(isPresented: $showingHelp) {
-            helpPopover
         }
         .onReceive(NotificationCenter.default.publisher(for: .terminalDidReceiveText)) { _ in
             // Text was received in terminal - recording is done
@@ -82,50 +72,6 @@ struct TerminalWindowView: View {
                 isDictating = false
             }
         }
-    }
-
-    private var helpPopover: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Terminal Shortcuts")
-                .font(.headline)
-
-            Divider()
-
-            HStack {
-                Text("fn (hold)")
-                    .font(.system(.caption, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.2))
-                    .cornerRadius(4)
-                Text("Start dictation")
-                    .font(.caption)
-            }
-
-            HStack {
-                Text("⌘W")
-                    .font(.system(.caption, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.2))
-                    .cornerRadius(4)
-                Text("Close terminal")
-                    .font(.caption)
-            }
-
-            HStack {
-                Text("⌘K")
-                    .font(.system(.caption, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.2))
-                    .cornerRadius(4)
-                Text("Clear screen")
-                    .font(.caption)
-            }
-        }
-        .padding()
-        .frame(width: 220)
     }
 
     private func toggleDictation() {
