@@ -32,10 +32,9 @@ struct TerminalSettingsTab: View {
                 // New Connection
                 newConnectionSection
 
-                Divider()
-
-                // Terminal Settings
-                terminalSettingsSection
+                // Terminal Settings - Commented out for now, keeping it simple
+                // Divider()
+                // terminalSettingsSection
             }
             .padding()
         }
@@ -159,24 +158,27 @@ struct TerminalSettingsTab: View {
         .frame(width: 300)
     }
 
-    private var terminalSettingsSection: some View {
-        GroupBox(label: Label("Terminal Settings", systemImage: "gearshape")) {
-            Form {
-                HStack {
-                    Text("Font Size:")
-                    Slider(value: $settings.fontSize, in: 10...20, step: 1)
-                    Text("\(Int(settings.fontSize))pt")
-                        .frame(width: 40, alignment: .trailing)
-                }
-
-                Picker("Color Scheme", selection: $settings.colorScheme) {
-                    Text("Default").tag("Default")
-                    Text("Solarized Dark").tag("Solarized Dark")
-                    Text("Dracula").tag("Dracula")
-                }
-            }
-        }
-    }
+    // Terminal settings commented out for now - keeping UI clean and simple
+    // Can be re-enabled later when needed
+    //
+    // private var terminalSettingsSection: some View {
+    //     GroupBox(label: Label("Terminal Settings", systemImage: "gearshape")) {
+    //         Form {
+    //             HStack {
+    //                 Text("Font Size:")
+    //                 Slider(value: $settings.fontSize, in: 10...20, step: 1)
+    //                 Text("\(Int(settings.fontSize))pt")
+    //                     .frame(width: 40, alignment: .trailing)
+    //             }
+    //
+    //             Picker("Color Scheme", selection: $settings.colorScheme) {
+    //                 Text("Default").tag("Default")
+    //                 Text("Solarized Dark").tag("Solarized Dark")
+    //                 Text("Dracula").tag("Dracula")
+    //             }
+    //         }
+    //     }
+    // }
 
     private func makeConnection(name: String = "") -> SSHConnection {
         SSHConnection(
