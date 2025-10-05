@@ -19,6 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var pasteManager: PasteManager!  // Keep a reference to PasteManager
     private var transformationService: TransformationService?
     private var settingsWindowController: SettingsWindowController?
+    private var sshConnectionsWindowController: SSHConnectionsWindowController?
     private var downloadStatusMenuItem: NSMenuItem?  // For showing download progress
 
     // Shared reference for accessing AudioManager from Settings
@@ -209,6 +210,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(
             NSMenuItem(title: "Settings...", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(
+            NSMenuItem(title: "SSH Connections...", action: #selector(showSSHConnections), keyEquivalent: ""))
+        menu.addItem(
             NSMenuItem(
                 title: "Check Permissions", action: #selector(checkPermissions), keyEquivalent: "p")
         )
@@ -227,6 +230,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         settingsWindowController?.window?.center()
         settingsWindowController?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func showSSHConnections() {
+        if sshConnectionsWindowController == nil {
+            sshConnectionsWindowController = SSHConnectionsWindowController()
+        }
+
+        sshConnectionsWindowController?.window?.center()
+        sshConnectionsWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
