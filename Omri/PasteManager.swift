@@ -106,9 +106,8 @@ private extension PasteManager {
         Logger.log("Transformation service available, attempting transform...", context: "Transform", level: .debug)
 
         // Notify delegate that AI transformation is starting
-        await MainActor.run {
-            delegate?.pasteManagerWillStartTransformation()
-        }
+        // Already on MainActor (class is @MainActor)
+        delegate?.pasteManagerWillStartTransformation()
 
         do {
             let processedPrompt = Settings.shared.processedTransformationPrompt(for: text)
@@ -131,10 +130,9 @@ private extension PasteManager {
     func handleTransformationError(_ error: Error) async {
         guard let transformError = error as? TransformationError,
               transformError == .apiKeyMissing else { return }
-        
-        await MainActor.run {
-            showAPIKeyAlert()
-        }
+
+        // Already on MainActor (class is @MainActor)
+        showAPIKeyAlert()
     }
 }
 

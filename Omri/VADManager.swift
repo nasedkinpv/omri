@@ -107,9 +107,8 @@ class VADManager: ObservableObject {
             Logger.log("VAD Manager initialized successfully", context: "VAD", level: .info)
         } catch {
             let vadError = VADError.initializationFailed(error.localizedDescription)
-            await MainActor.run {
-                self.lastError = vadError
-            }
+            // Already on MainActor (class is @MainActor)
+            self.lastError = vadError
             throw vadError
         }
     }
@@ -118,11 +117,9 @@ class VADManager: ObservableObject {
         vadInstance = nil
         streamState = nil
         isInitialized = false
-
-        Task { @MainActor in
-            isListening = false
-            isSpeechDetected = false
-        }
+        // Already on MainActor (class is @MainActor)
+        isListening = false
+        isSpeechDetected = false
     }
 
     // MARK: - Voice Activity Detection
@@ -438,10 +435,9 @@ class VADManager: ObservableObject {
         try await initialize()
 
         // Restore listening state
+        // Already on MainActor (class is @MainActor)
         if wasListening {
-            await MainActor.run {
-                self.startListening()
-            }
+            self.startListening()
         }
     }
 }
