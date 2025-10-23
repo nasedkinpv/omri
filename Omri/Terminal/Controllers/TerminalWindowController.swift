@@ -1,0 +1,133 @@
+//
+//  TerminalWindowController.swift
+//  Omri
+//
+//  Created by beneric.studio
+//  Copyright © 2025 beneric.studio. All rights reserved.
+//
+//  Manages terminal window lifecycle and SSH connections
+//
+
+#if os(macOS)
+import Cocoa
+import SwiftUI
+import SwiftTerm
+
+// MARK: - Import Shared Logger
+// Note: Logger.swift is in Shared/Utils/ and available to both targets
+
+@MainActor
+class TerminalWindowController: NSWindowController {
+    static let shared = TerminalWindowController()
+
+    private var terminalView: LocalProcessTerminalView?
+    private var currentConnection: SSHConnection?
+
+    convenience init() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.title = "Omri Terminal"
+        window.titlebarAppearsTransparent = true
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 400, height: 300)
+
+        self.init(window: window)
+    }
+
+    /// Connect to SSH server and display terminal
+    func connect(to connection: SSHConnection) {
+        currentConnection = connection
+
+        let terminalView = LocalProcessTerminalView(frame: .zero)
+
+        // Configure terminal appearance with Hack Nerd Font
+        if let hackFont = NSFont(name: "HackNFM-Regular", size: CGFloat(TerminalSettings.shared.fontSize)) {
+            terminalView.font = hackFont
+            Logger.log("✅ Using Hack Nerd Font (HackNFM-Regular) @ \(TerminalSettings.shared.fontSize)pt", context: "Terminal", level: .info)
+        } else {
+            // Fallback to system monospace if Hack Nerd Font not found
+            terminalView.font = NSFont.monospacedSystemFont(
+                ofSize: CGFloat(TerminalSettings.shared.fontSize),
+                weight: .regular
+            )
+            Logger.log("⚠️ Hack Nerd Font not found, using system monospace @ \(TerminalSettings.shared.fontSize)pt", context: "Terminal", level: .warning)
+        }
+
+        // Spawn SSH process
+        let (executable, args) = connection.sshCommand
+        terminalView.startProcess(
+            executable: executable,
+            args: args
+        )
+
+        // Wrap in SwiftUI with dictation controls
+        let contentView = TerminalWindowView(
+            terminalView: terminalView,
+            connection: connection
+        )
+
+        let hostingView = NSHostingView(rootView: contentView)
+        window?.contentView = hostingView
+        window?.title = "Omri Terminal - \(connection.name)"
+
+        self.terminalView = terminalView
+
+        // Show window
+        showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// Send text to terminal (for dictation integration)
+    func sendText(_ text: String) {
+        terminalView?.send(txt: text)
+
+        // Notify that text was received (for UI state updates)
+        NotificationCenter.default.post(
+            name: .terminalDidReceiveText,
+            object: nil
+        )
+    }
+
+    /// Clear current input line in terminal (Ctrl+U)
+    func clearInput() {
+        // Send Ctrl+U control character (ASCII 21)
+        // This is the standard Unix sequence to clear the current input line
+        let ctrlU = "\u{15}"
+        terminalView?.send(txt: ctrlU)
+        Logger.log("Cleared input line", context: "Terminal", level: .debug)
+    }
+
+    /// Send Enter key to terminal (execute command)
+    func sendEnter() {
+        // Send newline character to execute the current command
+        terminalView?.send(txt: "\n")
+        Logger.log("Sent Enter", context: "Terminal", level: .debug)
+    }
+
+    /// Clear terminal screen (Ctrl+L)
+    func clearScreen() {
+        // Send Ctrl+L control character (ASCII 12)
+        // This is the standard Unix sequence to clear the terminal screen
+        let ctrlL = "\u{0C}"
+        terminalView?.send(txt: ctrlL)
+        Logger.log("Cleared screen", context: "Terminal", level: .debug)
+    }
+
+    /// Check if terminal window is active
+    var isTerminalActive: Bool {
+        window?.isKeyWindow ?? false
+    }
+}
+
+// Notification for text received in terminal
+extension Notification.Name {
+    static let terminalDidReceiveText = Notification.Name("terminalDidReceiveText")
+}
+
+#endif

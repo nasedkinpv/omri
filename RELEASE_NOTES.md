@@ -1,4 +1,4 @@
-# Dictly v1.4.1
+# Omri v1.4.1
 
 ## Performance Optimization Release
 
@@ -20,7 +20,7 @@ Faster dictate→paste flow with reduced latency and improved VAD reliability.
 
 ---
 
-# Dictly v1.4.0
+# Omri v1.4.0
 
 ## Enhanced On-Device & Streaming Improvements
 
@@ -91,11 +91,11 @@ None - all existing functionality enhanced.
 
 ---
 
-**Previous Release:** [v1.3.0 - Parakeet Integration](https://github.com/yourusername/dictly/releases/tag/v1.3.0)
+**Previous Release:** [v1.3.0 - Parakeet Integration](https://github.com/yourusername/omri/releases/tag/v1.3.0)
 
 ---
 
-# Dictly v1.3.0
+# Omri v1.3.0
 
 ## Parakeet CoreML Integration - Multilingual On-Device Transcription
 
@@ -155,11 +155,11 @@ None reported.
 
 ---
 
-**Previous Release:** [v1.2.0 - On-Device & VAD](https://github.com/yourusername/dictly/releases/tag/v1.2.0)
+**Previous Release:** [v1.2.0 - On-Device & VAD](https://github.com/yourusername/omri/releases/tag/v1.2.0)
 
 ---
 
-# Dictly v1.2.0
+# Omri v1.2.0
 
 ## On-Device Transcription & Smart Voice Detection
 
@@ -242,7 +242,7 @@ None reported.
 
 ---
 
-**Previous Release:** [v1.1.0 - Local AI Model Support](https://github.com/yourusername/dictly/releases/tag/v1.1.0)
+**Previous Release:** [v1.1.0 - Local AI Model Support](https://github.com/yourusername/omri/releases/tag/v1.1.0)
 
 ---
 

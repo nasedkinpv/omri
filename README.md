@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="brand-icon.png" alt="Dictly Logo" width="120" height="120">
+  <img src="brand-icon.png" alt="Omri Logo" width="120" height="120">
   
-  # Dictly
+  # Omri
   
   **macOS voice transcription with your own API keys**
 </div>
@@ -15,13 +15,13 @@ An alternative to expensive transcription subscriptions. Choose from 100% privat
 <td width="50%">
 
 ### Menu Bar
-![Menu Bar](screenshots/dictly_menu.png)
+![Menu Bar](screenshots/omri_menu.png)
 
 </td>
 <td width="50%">
 
 ### Dictation Settings
-![Dictation](screenshots/dictly-settings-dictation.png)
+![Dictation](screenshots/omri-settings-dictation.png)
 
 </td>
 </tr>
@@ -29,20 +29,20 @@ An alternative to expensive transcription subscriptions. Choose from 100% privat
 <td>
 
 ### AI Polish
-![AI Polish](screenshots/dictly-settings-ai-polish.png)
+![AI Polish](screenshots/omri-settings-ai-polish.png)
 
 </td>
 <td>
 
 ### General Settings
-![General](screenshots/dictly-settings-general.png)
+![General](screenshots/omri-settings-general.png)
 
 </td>
 </tr>
 </table>
 
 ### About
-![About](screenshots/dictly-settings-about.png)
+![About](screenshots/omri-settings-about.png)
 
 ## Features
 
@@ -65,17 +65,17 @@ An alternative to expensive transcription subscriptions. Choose from 100% privat
 2. **Download & Install**
    
    **Option A: Download Release (Recommended)**
-   - Go to [Releases](https://github.com/nasedkinpv/dictly/releases)
-   - Download latest `Dictly-vX.X.X-apple-silicon.zip`
+   - Go to [Releases](https://github.com/nasedkinpv/omri/releases)
+   - Download latest `Omri-vX.X.X-apple-silicon.zip`
    - Extract the zip file
-   - Remove quarantine: `xattr -rd com.apple.quarantine Dictly.app`
-   - Move `Dictly.app` to Applications
+   - Remove quarantine: `xattr -rd com.apple.quarantine Omri.app`
+   - Move `Omri.app` to Applications
 
    **Option B: Build from Source**
    ```bash
-   git clone https://github.com/nasedkinpv/dictly.git
-   cd dictly
-   open Dictly.xcodeproj
+   git clone https://github.com/nasedkinpv/omri.git
+   cd omri
+   open Omri.xcodeproj
    # Build and run in Xcode
    ```
 
