@@ -1,4 +1,4 @@
-# Dictly Terminal - Usage Guide
+# Omri Terminal - Usage Guide
 
 ## ✅ Fully Functional SSH Terminal with Voice Dictation
 
@@ -238,7 +238,7 @@ Dictate in whichever is focused
 ssh-keygen -t ed25519
 ssh-copy-id user@server.com
 
-# In Dictly
+# In Omri
 Settings → Terminal → New Connection
 Auth: SSH Key
 Browse → ~/.ssh/id_ed25519

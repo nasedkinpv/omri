@@ -21,8 +21,8 @@ jobs:
     - name: Build
       run: |
         xcodebuild build \
-          -project Dictly.xcodeproj \
-          -scheme Dictly \
+          -project Omri.xcodeproj \
+          -scheme Omri \
           -configuration Release \
           -destination 'platform=macOS,arch=arm64' \
           CODE_SIGN_IDENTITY="" \

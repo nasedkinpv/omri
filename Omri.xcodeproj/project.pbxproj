@@ -1,0 +1,623 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		470D96BE2E8AC5B80046CF66 /* VADManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470D96BD2E8AC5B80046CF66 /* VADManager.swift */; };
+		470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 470D96C02E8AC65D0046CF66 /* FluidAudio */; };
+		470D96C22E8AC65D0046CF67 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 470D96C02E8AC65D0046CF66 /* FluidAudio */; };
+		474C1E8E2E92D1F800F33E30 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 474C1E8D2E92D1F800F33E30 /* SwiftTerm */; };
+		474C1E8F2E92D1F800F33E31 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 474C1E8D2E92D1F800F33E30 /* SwiftTerm */; };
+		474C200E2E930AB900F33E30 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = 47A1B3C12E9F5A1200C44D77 /* Citadel */; };
+		47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE12DD278D4009E78D8 /* AudioManager.swift */; };
+		47A49FF92DD278D4009E78D8 /* PasteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE92DD278D4009E78D8 /* PasteManager.swift */; };
+		47A49FFC2DD278D4009E78D8 /* AudioManagerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */; };
+		47A49FFD2DD278D4009E78D8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FDF2DD278D4009E78D8 /* AppDelegate.swift */; };
+		47A4A0002DD278D4009E78D8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 47A49FE02DD278D4009E78D8 /* Assets.xcassets */; };
+		47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */; };
+		47D4338D2E4D197C00EDD003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D4338C2E4D197C00EDD003 /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		470D96BD2E8AC5B80046CF66 /* VADManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VADManager.swift; sourceTree = "<group>"; };
+		474C1E972E92E88E00F33E30 /* OmriiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OmriiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		47A49FDF2DD278D4009E78D8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		47A49FE02DD278D4009E78D8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		47A49FE12DD278D4009E78D8 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
+		47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManagerDelegate.swift; sourceTree = "<group>"; };
+		47A49FE92DD278D4009E78D8 /* PasteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteManager.swift; sourceTree = "<group>"; };
+		47A49FEF2DD278D4009E78D8 /* VoiceDictation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VoiceDictation.entitlements; sourceTree = "<group>"; };
+		47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechAnalyzerManager.swift; sourceTree = "<group>"; };
+		47D4338C2E4D197C00EDD003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DA79FD132CDEE6650077AF85 /* Omri.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omri.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		474C1E9D2E92E88F00F33E31 /* Exceptions for "OmriiOS" folder in "OmriiOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 474C1E962E92E88E00F33E30 /* OmriiOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		474C1E862E92D14F00F33E30 /* Terminal */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Terminal;
+			sourceTree = "<group>";
+		};
+		474C1E982E92E88E00F33E30 /* OmriiOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				474C1E9D2E92E88F00F33E31 /* Exceptions for "OmriiOS" folder in "OmriiOS" target */,
+			);
+			path = OmriiOS;
+			sourceTree = "<group>";
+		};
+		474C20DB2E93295100F33E30 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		474C1E942E92E88E00F33E30 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				470D96C22E8AC65D0046CF67 /* FluidAudio in Frameworks */,
+				474C200E2E930AB900F33E30 /* Citadel in Frameworks */,
+				474C1E8F2E92D1F800F33E31 /* SwiftTerm in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA79FD102CDEE6650077AF85 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				474C1E8E2E92D1F800F33E30 /* SwiftTerm in Frameworks */,
+				470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		47A49FF02DD278D4009E78D8 /* Omri */ = {
+			isa = PBXGroup;
+			children = (
+				474C1E862E92D14F00F33E30 /* Terminal */,
+				47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */,
+				470D96BD2E8AC5B80046CF66 /* VADManager.swift */,
+				47D4338C2E4D197C00EDD003 /* SettingsView.swift */,
+				47A49FDF2DD278D4009E78D8 /* AppDelegate.swift */,
+				47A49FE02DD278D4009E78D8 /* Assets.xcassets */,
+				47A49FE12DD278D4009E78D8 /* AudioManager.swift */,
+				47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */,
+				47A49FE92DD278D4009E78D8 /* PasteManager.swift */,
+				47A49FEF2DD278D4009E78D8 /* VoiceDictation.entitlements */,
+			);
+			path = Omri;
+			sourceTree = "<group>";
+		};
+		DA79FD0A2CDEE6650077AF85 = {
+			isa = PBXGroup;
+			children = (
+				47A49FF02DD278D4009E78D8 /* Omri */,
+				474C1E982E92E88E00F33E30 /* OmriiOS */,
+				DA79FD142CDEE6650077AF85 /* Products */,
+				474C20DB2E93295100F33E30 /* Shared */,
+			);
+			sourceTree = "<group>";
+		};
+		DA79FD142CDEE6650077AF85 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DA79FD132CDEE6650077AF85 /* Omri.app */,
+				474C1E972E92E88E00F33E30 /* OmriiOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		474C1E962E92E88E00F33E30 /* OmriiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 474C1E9F2E92E89000F33E30 /* Build configuration list for PBXNativeTarget "OmriiOS" */;
+			buildPhases = (
+				474C1E932E92E88E00F33E30 /* Sources */,
+				474C1E942E92E88E00F33E30 /* Frameworks */,
+				474C1E952E92E88E00F33E30 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				474C1E862E92D14F00F33E30 /* Terminal */,
+				474C1E982E92E88E00F33E30 /* OmriiOS */,
+				474C20DB2E93295100F33E30 /* Shared */,
+			);
+			name = OmriiOS;
+			packageProductDependencies = (
+				470D96C02E8AC65D0046CF66 /* FluidAudio */,
+				474C1E8D2E92D1F800F33E30 /* SwiftTerm */,
+				47A1B3C12E9F5A1200C44D77 /* Citadel */,
+			);
+			productName = OmriiOS;
+			productReference = 474C1E972E92E88E00F33E30 /* OmriiOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DA79FD122CDEE6650077AF85 /* Omri */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA79FD222CDEE6670077AF85 /* Build configuration list for PBXNativeTarget "Omri" */;
+			buildPhases = (
+				DA79FD0F2CDEE6650077AF85 /* Sources */,
+				DA79FD102CDEE6650077AF85 /* Frameworks */,
+				DA79FD112CDEE6650077AF85 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				474C1E862E92D14F00F33E30 /* Terminal */,
+				474C20DB2E93295100F33E30 /* Shared */,
+			);
+			name = Omri;
+			packageProductDependencies = (
+				470D96C02E8AC65D0046CF66 /* FluidAudio */,
+				474C1E8D2E92D1F800F33E30 /* SwiftTerm */,
+			);
+			productName = Omri;
+			productReference = DA79FD132CDEE6650077AF85 /* Omri.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DA79FD0B2CDEE6650077AF85 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					474C1E962E92E88E00F33E30 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					DA79FD122CDEE6650077AF85 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+				};
+			};
+			buildConfigurationList = DA79FD0E2CDEE6650077AF85 /* Build configuration list for PBXProject "Omri" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DA79FD0A2CDEE6650077AF85;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+				47A1B3C02E9F5A1200C44D77 /* XCRemoteSwiftPackageReference "Citadel" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DA79FD142CDEE6650077AF85 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DA79FD122CDEE6650077AF85 /* Omri */,
+				474C1E962E92E88E00F33E30 /* OmriiOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		474C1E952E92E88E00F33E30 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA79FD112CDEE6650077AF85 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47A4A0002DD278D4009E78D8 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		474C1E932E92E88E00F33E30 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA79FD0F2CDEE6650077AF85 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				470D96BE2E8AC5B80046CF66 /* VADManager.swift in Sources */,
+				47D4338D2E4D197C00EDD003 /* SettingsView.swift in Sources */,
+				47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */,
+				47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */,
+				47A49FF92DD278D4009E78D8 /* PasteManager.swift in Sources */,
+				47A49FFC2DD278D4009E78D8 /* AudioManagerDelegate.swift in Sources */,
+				47A49FFD2DD278D4009E78D8 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		474C1EA02E92E89000F33E30 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OmriiOS/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record your voice for transcription";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Beneric.OmriiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		474C1EA12E92E89000F33E30 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OmriiOS/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record your voice for transcription";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Beneric.OmriiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		DA79FD202CDEE6670077AF85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		DA79FD212CDEE6670077AF85 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = VK9BHFUZP3;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		DA79FD232CDEE6670077AF85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = Omri/VoiceDictation.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 6;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Omri;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record your voice for transcription";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is needed to convert your voice to text";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beneric.Omri;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DA79FD242CDEE6670077AF85 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = Omri/VoiceDictation.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 6;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Omri;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record your voice for transcription";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is needed to convert your voice to text";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beneric.Omri;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		474C1E9F2E92E89000F33E30 /* Build configuration list for PBXNativeTarget "OmriiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				474C1EA02E92E89000F33E30 /* Debug */,
+				474C1EA12E92E89000F33E30 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA79FD0E2CDEE6650077AF85 /* Build configuration list for PBXProject "Omri" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA79FD202CDEE6670077AF85 /* Debug */,
+				DA79FD212CDEE6670077AF85 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA79FD222CDEE6670077AF85 /* Build configuration list for PBXNativeTarget "Omri" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA79FD232CDEE6670077AF85 /* Debug */,
+				DA79FD242CDEE6670077AF85 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
+		47A1B3C02E9F5A1200C44D77 /* XCRemoteSwiftPackageReference "Citadel" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/orlandos-nl/Citadel";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		470D96C02E8AC65D0046CF66 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
+		};
+		474C1E8D2E92D1F800F33E30 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
+		47A1B3C12E9F5A1200C44D77 /* Citadel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47A1B3C02E9F5A1200C44D77 /* XCRemoteSwiftPackageReference "Citadel" */;
+			productName = Citadel;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DA79FD0B2CDEE6650077AF85 /* Project object */;
+}

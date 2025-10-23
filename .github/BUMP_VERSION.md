@@ -10,7 +10,7 @@
 
 # Edit RELEASE_NOTES.md
 # - Add new version section at top
-# - Use format: # Dictly v1.5.0
+# - Use format: # Omri v1.5.0
 ```
 
 ### 2. Commit & Tag
@@ -26,7 +26,7 @@ git push origin main --tags
 ```
 
 **GitHub Actions will automatically:**
-- Build `Dictly-v1.5.0-apple-silicon.zip`
+- Build `Omri-v1.5.0-apple-silicon.zip`
 - Create GitHub Release with RELEASE_NOTES.md
 - Attach binary + checksum
 
@@ -36,7 +36,7 @@ git push origin main --tags
 
 **Single Source of Truth:**
 ```swift
-// Dictly/Version.swift
+// Omri/Version.swift
 struct AppVersion {
     static let marketing = "1.4.1"  // ← UPDATE HERE
     static let build = "2025.10"     // ← UPDATE HERE
@@ -48,8 +48,8 @@ struct AppVersion {
 - ✅ GitHub Actions: Extracts version from git tag `v1.4.1`
 
 **Manual Updates:**
-- ✅ `Dictly/Version.swift` (marketing + build)
-- ✅ `RELEASE_NOTES.md` (header: `# Dictly v1.4.1`)
+- ✅ `Omri/Version.swift` (marketing + build)
+- ✅ `RELEASE_NOTES.md` (header: `# Omri v1.4.1`)
 - ✅ Git tag (via `git tag v1.4.1`)
 
 ---
@@ -58,7 +58,7 @@ struct AppVersion {
 
 ```bash
 # Check current version in code
-grep "marketing = " Dictly/Version.swift
+grep "marketing = " Omri/Version.swift
 
 # Check RELEASE_NOTES header
 head -1 RELEASE_NOTES.md
@@ -92,8 +92,8 @@ git log --oneline --decorate -5
 
 ```bash
 # 1. Update version files
-vi Dictly/Version.swift        # Change "1.4.1" → "1.5.0"
-vi RELEASE_NOTES.md            # Add "# Dictly v1.5.0" section at top
+vi Omri/Version.swift        # Change "1.4.1" → "1.5.0"
+vi RELEASE_NOTES.md            # Add "# Omri v1.5.0" section at top
 
 # 2. Commit and tag
 git add -A
@@ -104,10 +104,10 @@ git tag v1.5.0
 git push origin main --tags
 
 # 4. Monitor GitHub Actions
-# https://github.com/nasedkinpv/dictly/actions
+# https://github.com/nasedkinpv/omri/actions
 
 # 5. Verify release created
-# https://github.com/nasedkinpv/dictly/releases/latest
+# https://github.com/nasedkinpv/omri/releases/latest
 ```
 
 ---
@@ -124,7 +124,7 @@ git push origin main --tags
 
 ## 🔗 Related Files
 
-- `Dictly/Version.swift` - Single source of truth
+- `Omri/Version.swift` - Single source of truth
 - `RELEASE_NOTES.md` - Release notes (gets embedded in GitHub Release)
 - `.github/workflows/release.yml` - GitHub Actions release workflow
 - `VERSION_BUMP.md` - Detailed version bump documentation (ignored in git)

@@ -27,8 +27,8 @@ jobs:
     - name: Build Release
       run: |
         xcodebuild build \
-          -project Dictly.xcodeproj \
-          -scheme Dictly \
+          -project Omri.xcodeproj \
+          -scheme Omri \
           -configuration Release \
           -destination 'platform=macOS,arch=arm64' \
           -derivedDataPath ./DerivedData \
@@ -40,14 +40,14 @@ jobs:
         mkdir -p release
         
         # Copy built app
-        cp -R ./DerivedData/Build/Products/Release/Dictly.app ./release/
+        cp -R ./DerivedData/Build/Products/Release/Omri.app ./release/
         
         # Create zip using ditto to preserve app structure
-        ditto -c -k --rsrc --keepParent ./release/Dictly.app "./release/Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip"
+        ditto -c -k --rsrc --keepParent ./release/Omri.app "./release/Omri-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip"
         
         # Calculate checksum
         cd release
-        shasum -a 256 "Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip" > checksum.txt
+        shasum -a 256 "Omri-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip" > checksum.txt
         
     - name: Create Release Notes
       id: release_notes
@@ -58,11 +58,11 @@ jobs:
         ---
         
         ## Installation
-        1. Download \`Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip\`
+        1. Download \`Omri-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip\`
         2. Extract the zip file
-        3. Remove quarantine: \`xattr -rd com.apple.quarantine Dictly.app\`
-        4. Move \`Dictly.app\` to your Applications folder
-        5. Launch Dictly and grant permissions when prompted
+        3. Remove quarantine: \`xattr -rd com.apple.quarantine Omri.app\`
+        4. Move \`Omri.app\` to your Applications folder
+        5. Launch Omri and grant permissions when prompted
         6. Choose transcription provider in settings
         7. Start dictating with fn key!
 
@@ -84,10 +84,10 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: "Dictly v${{ steps.get_version.outputs.VERSION }}"
+        name: "Omri v${{ steps.get_version.outputs.VERSION }}"
         body_path: release_notes.md
         files: |
-          release/Dictly-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip
+          release/Omri-v${{ steps.get_version.outputs.VERSION }}-apple-silicon.zip
           release/checksum.txt
         draft: false
         prerelease: false
