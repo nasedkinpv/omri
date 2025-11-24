@@ -67,23 +67,9 @@ struct GeneralSettingsContent: View {
                 VStack(alignment: .leading, spacing: 16) {
                     SettingsSectionHeader(title:"Storage")
 
-                    HStack(alignment: .top, spacing: 20) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Downloaded Models")
-                                .font(.headline)
-                            Text("On-device transcription models (~600MB)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                    onDeviceModelsSection
 
-                        Spacer()
-
-                        Button("Clear models...") {
-                            showingClearModelsAlert = true
-                        }
-                        .buttonStyle(.borderless)
-                        .help("Remove downloaded models to free ~600MB of space")
-                    }
+                    SettingsSectionFooter(text: "Download models for offline, private transcription. Models are cached after first download.")
                 }
             }
             .padding()
@@ -126,23 +112,11 @@ struct GeneralSettingsContent: View {
 
             // Storage Management
             Section {
-                LabeledContent {
-                    Button("Clear models...") {
-                        showingClearModelsAlert = true
-                    }
-                    .buttonStyle(.borderless)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Downloaded Models")
-                            .font(.headline)
-                            .fontWeight(.medium)
-                        Text("On-device transcription models (~600MB)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
+                onDeviceModelsSection
             } header: {
                 Text("Storage")
+            } footer: {
+                Text("Download models for offline, private transcription. Models are cached after first download.")
             }
         }
         .alert("Clear Downloaded Models?", isPresented: $showingClearModelsAlert) {
@@ -152,6 +126,213 @@ struct GeneralSettingsContent: View {
             }
         } message: {
             Text("This will remove all downloaded transcription models (~600MB). Models will be re-downloaded automatically when you use on-device transcription.")
+        }
+    }
+
+    // MARK: - Model Download UI
+
+    @ViewBuilder
+    private var onDeviceModelsSection: some View {
+        #if os(macOS) && canImport(FluidAudio)
+        if #available(macOS 14.0, *) {
+            let manager = ModelDownloadManager.shared
+
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(manager.availableModels, id: \.id) { model in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(model.displayName)
+                                    .font(.headline)
+                                Text(model.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(model.estimatedSize)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            HStack(spacing: 12) {
+                                // Status indicator
+                                OmriStatusIndicator(
+                                    state: modelStatusToConnectionState(manager.state(for: model.id)),
+                                    service: .transcription
+                                )
+
+                                // Action button
+                                modelActionButton(for: model, state: manager.state(for: model.id), manager: manager)
+                            }
+                        }
+
+                        // Progress indicator when downloading
+                        if case .downloading = manager.state(for: model.id) {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Downloading model files (~600 MB)...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        // Error message
+                        if case .error(let message) = manager.state(for: model.id) {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                // Clear all models button
+                if manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloaded }) {
+                    HStack {
+                        Spacer()
+                        Button("Clear All Models...") {
+                            showingClearModelsAlert = true
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundColor(.red)
+                        .disabled(manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloading }))
+                    }
+                }
+            }
+            .onAppear {
+                Task {
+                    await manager.checkAllModelsStatus()
+                }
+            }
+        } else {
+            Text("On-device models require macOS 14.0+")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        #elseif canImport(FluidAudio)
+        if #available(iOS 17.0, *) {
+            let manager = ModelDownloadManager.shared
+
+            VStack(spacing: 16) {
+                ForEach(manager.availableModels, id: \.id) { model in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(model.displayName)
+                                    .font(.headline)
+                                    .fontWeight(.medium)
+                                Text(model.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(model.estimatedSize)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            HStack(spacing: 12) {
+                                OmriStatusIndicator(
+                                    state: modelStatusToConnectionState(manager.state(for: model.id)),
+                                    service: .transcription
+                                )
+
+                                modelActionButton(for: model, state: manager.state(for: model.id), manager: manager)
+                            }
+                        }
+
+                        // Progress indicator when downloading
+                        if case .downloading = manager.state(for: model.id) {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Downloading model files (~600 MB)...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        // Error message
+                        if case .error(let message) = manager.state(for: model.id) {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                // Clear all models button
+                if manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloaded }) {
+                    HStack {
+                        Spacer()
+                        Button("Clear All Models...") {
+                            showingClearModelsAlert = true
+                        }
+                        .foregroundColor(.red)
+                        .disabled(manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloading }))
+                    }
+                }
+            }
+            .onAppear {
+                Task {
+                    await manager.checkAllModelsStatus()
+                }
+            }
+        }
+        #else
+        Text("On-device models not available on this platform")
+            .font(.caption)
+            .foregroundColor(.secondary)
+        #endif
+    }
+
+    @ViewBuilder
+    private func modelActionButton(for model: any DownloadableModel, state: ModelDownloadState, manager: ModelDownloadManager) -> some View {
+        switch state {
+        case .notDownloaded:
+            Button("Download") {
+                Task {
+                    await manager.downloadModel(model.id)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+
+        case .downloading:
+            Button("Downloading...") {}
+                .disabled(true)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+        case .downloaded:
+            Button("Ready") {}
+                .disabled(true)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+        case .error:
+            Button("Clear & Retry") {
+                Task {
+                    // Clear partial/corrupted downloads before retrying
+                    manager.clearModel(model.id)
+                    await manager.downloadModel(model.id)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+    }
+
+    private func modelStatusToConnectionState(_ state: ModelDownloadState) -> OmriStatusIndicator.ConnectionState {
+        switch state {
+        case .notDownloaded:
+            return .disconnected
+        case .downloading:
+            return .connecting
+        case .downloaded:
+            return .connected
+        case .error:
+            return .error
         }
     }
 
@@ -180,5 +361,14 @@ struct GeneralSettingsContent: View {
 
         // Apple SpeechAnalyzer models are managed by system, no manual cleanup needed
         Logger.log("Model cache cleared successfully", context: "Settings", level: .info)
+
+        // Refresh model download manager state
+        #if canImport(FluidAudio)
+        if #available(macOS 14.0, iOS 17.0, *) {
+            Task {
+                await ModelDownloadManager.shared.checkAllModelsStatus()
+            }
+        }
+        #endif
     }
 }

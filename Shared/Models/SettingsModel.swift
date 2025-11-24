@@ -22,6 +22,15 @@ extension Notification.Name {
     static let apiKeyChanged = Notification.Name("apiKeyChanged")
 }
 
+// MARK: - Endpoint Validation State
+
+enum EndpointValidationState: Equatable {
+    case unchecked              // Initial state, no validation performed
+    case validating             // Currently testing the endpoint
+    case valid                  // Endpoint responded successfully
+    case invalid(String)        // Endpoint failed with error message
+}
+
 // MARK: - API Provider Enums
 
 enum TranscriptionProvider: String, CaseIterable {
@@ -265,16 +274,24 @@ class Settings: ObservableObject {
         didSet {
             synchronizeChanges()
             objectWillChange.send()
+            // Reset validation state when URL changes
+            customTransformationEndpointStatus = .unchecked
         }
     }
+
+    @Published var customTransformationEndpointStatus: EndpointValidationState = .unchecked
 
     @UserDefault("customTranscriptionBaseURL", defaultValue: "http://localhost:8000/v1/audio/transcriptions")
     var customTranscriptionBaseURL: String {
         didSet {
             synchronizeChanges()
             objectWillChange.send()
+            // Reset validation state when URL changes
+            customTranscriptionEndpointStatus = .unchecked
         }
     }
+
+    @Published var customTranscriptionEndpointStatus: EndpointValidationState = .unchecked
 
     static let defaultTransformationPrompt = """
         You are an expert text processor specialized in improving transcribed speech. Transform the following transcribed content by:

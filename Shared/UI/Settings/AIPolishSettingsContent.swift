@@ -89,7 +89,28 @@ struct AIPolishSettingsContent: View {
                         VStack(alignment: .leading, spacing: 16) {
                             SettingsSectionHeader(title:"Custom API Endpoint")
 
-                            TextField("Base URL", text: $settings.customTransformationBaseURL, prompt: Text("http://localhost:11434/v1/chat/completions"))
+                            HStack(spacing: 12) {
+                                TextField("Base URL", text: $settings.customTransformationBaseURL, prompt: Text("http://localhost:11434/v1/chat/completions"))
+
+                                OmriStatusIndicator(
+                                    state: mapEndpointStatus(settings.customTransformationEndpointStatus),
+                                    service: .enhancement
+                                )
+
+                                Button("Test") {
+                                    Task {
+                                        await testTransformationEndpoint()
+                                    }
+                                }
+                                .disabled(settings.customTransformationBaseURL.isEmpty)
+                            }
+
+                            // Show error message if validation failed
+                            if case .invalid(let error) = settings.customTransformationEndpointStatus {
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
 
                             SettingsSectionFooter(text:"For local AI models like Ollama, LM Studio, or other OpenAI-compatible APIs")
                         }
@@ -237,7 +258,28 @@ struct AIPolishSettingsContent: View {
                 // Custom Base URL for OpenAI Compatible providers
                 if settings.transformationProvider.supportsCustomBaseURL {
                     Section {
-                        TextField("Base URL", text: $settings.customTransformationBaseURL, prompt: Text("http://localhost:11434/v1/chat/completions"))
+                        HStack(spacing: 12) {
+                            TextField("Base URL", text: $settings.customTransformationBaseURL, prompt: Text("http://localhost:11434/v1/chat/completions"))
+
+                            OmriStatusIndicator(
+                                state: mapEndpointStatus(settings.customTransformationEndpointStatus),
+                                service: .enhancement
+                            )
+
+                            Button("Test") {
+                                Task {
+                                    await testTransformationEndpoint()
+                                }
+                            }
+                            .disabled(settings.customTransformationBaseURL.isEmpty)
+                        }
+
+                        // Show error message if validation failed
+                        if case .invalid(let error) = settings.customTransformationEndpointStatus {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
                     } header: {
                         Text("Custom API Endpoint")
                     } footer: {
@@ -339,6 +381,34 @@ struct AIPolishSettingsContent: View {
                 }
             }
         }
+    }
+
+    // MARK: - Endpoint Validation Helpers
+
+    private func mapEndpointStatus(_ state: EndpointValidationState) -> OmriStatusIndicator.ConnectionState {
+        switch state {
+        case .unchecked:
+            return .disconnected
+        case .validating:
+            return .connecting
+        case .valid:
+            return .connected
+        case .invalid:
+            return .error
+        }
+    }
+
+    @MainActor
+    private func testTransformationEndpoint() async {
+        settings.customTransformationEndpointStatus = .validating
+
+        let apiKey = settings.apiKey(for: settings.transformationProvider) ?? ""
+        let result = await BaseHTTPService.validateEndpoint(
+            baseURL: settings.customTransformationBaseURL,
+            apiKey: apiKey
+        )
+
+        settings.customTransformationEndpointStatus = result
     }
 
 }

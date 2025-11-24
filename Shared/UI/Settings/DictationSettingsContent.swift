@@ -100,7 +100,28 @@ struct DictationSettingsContent: View {
                     VStack(alignment: .leading, spacing: 16) {
                         SettingsSectionHeader(title: "Custom API Endpoint")
 
-                        TextField("Base URL", text: $settings.customTranscriptionBaseURL, prompt: Text("http://localhost:8000/v1/audio/transcriptions"))
+                        HStack(spacing: 12) {
+                            TextField("Base URL", text: $settings.customTranscriptionBaseURL, prompt: Text("http://localhost:8000/v1/audio/transcriptions"))
+
+                            OmriStatusIndicator(
+                                state: mapEndpointStatus(settings.customTranscriptionEndpointStatus),
+                                service: .transcription
+                            )
+
+                            Button("Test") {
+                                Task {
+                                    await testTranscriptionEndpoint()
+                                }
+                            }
+                            .disabled(settings.customTranscriptionBaseURL.isEmpty)
+                        }
+
+                        // Show error message if validation failed
+                        if case .invalid(let error) = settings.customTranscriptionEndpointStatus {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
 
                         SettingsSectionFooter(text: "For local Whisper servers, faster-whisper, or other OpenAI-compatible transcription APIs")
                     }
@@ -232,7 +253,28 @@ struct DictationSettingsContent: View {
             // Custom Base URL for OpenAI Compatible providers
             if settings.transcriptionProvider.supportsCustomBaseURL {
                 Section {
-                    TextField("Base URL", text: $settings.customTranscriptionBaseURL, prompt: Text("http://localhost:8000/v1/audio/transcriptions"))
+                    HStack(spacing: 12) {
+                        TextField("Base URL", text: $settings.customTranscriptionBaseURL, prompt: Text("http://localhost:8000/v1/audio/transcriptions"))
+
+                        OmriStatusIndicator(
+                            state: mapEndpointStatus(settings.customTranscriptionEndpointStatus),
+                            service: .transcription
+                        )
+
+                        Button("Test") {
+                            Task {
+                                await testTranscriptionEndpoint()
+                            }
+                        }
+                        .disabled(settings.customTranscriptionBaseURL.isEmpty)
+                    }
+
+                    // Show error message if validation failed
+                    if case .invalid(let error) = settings.customTranscriptionEndpointStatus {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
                 } header: {
                     Text("Custom API Endpoint")
                 } footer: {
@@ -421,5 +463,33 @@ struct DictationSettingsContent: View {
         } else {
             return "Automatically starts recording when speech is detected and stops during silence"
         }
+    }
+
+    // MARK: - Endpoint Validation Helpers
+
+    private func mapEndpointStatus(_ state: EndpointValidationState) -> OmriStatusIndicator.ConnectionState {
+        switch state {
+        case .unchecked:
+            return .disconnected
+        case .validating:
+            return .connecting
+        case .valid:
+            return .connected
+        case .invalid:
+            return .error
+        }
+    }
+
+    @MainActor
+    private func testTranscriptionEndpoint() async {
+        settings.customTranscriptionEndpointStatus = .validating
+
+        let apiKey = settings.apiKey(for: settings.transcriptionProvider) ?? ""
+        let result = await BaseHTTPService.validateEndpoint(
+            baseURL: settings.customTranscriptionBaseURL,
+            apiKey: apiKey
+        )
+
+        settings.customTranscriptionEndpointStatus = result
     }
 }

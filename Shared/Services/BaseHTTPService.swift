@@ -87,4 +87,93 @@ class BaseHTTPService: HTTPService {
             throw HTTPError.invalidResponse
         }
     }
+
+    // MARK: - Endpoint Validation
+
+    /// Validate a custom endpoint by performing a lightweight health check
+    /// Returns EndpointValidationState based on the response
+    static func validateEndpoint(baseURL: String, apiKey: String = "", timeout: TimeInterval = 5.0) async -> EndpointValidationState {
+        // Validate URL format
+        guard let url = URL(string: baseURL) else {
+            return .invalid("Invalid URL format")
+        }
+
+        // Ensure URL has a scheme
+        guard url.scheme != nil else {
+            return .invalid("URL must include protocol (http:// or https://)")
+        }
+
+        // Create a simple HEAD request for health check
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = timeout
+
+        // Add API key if provided
+        if !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return .invalid("Invalid response from server")
+            }
+
+            // Accept 2xx success codes and 405 Method Not Allowed (some servers don't support HEAD)
+            if (200...299).contains(httpResponse.statusCode) {
+                return .valid
+            } else if httpResponse.statusCode == 405 {
+                // Retry with OPTIONS method if HEAD is not supported
+                return await validateWithOptions(url: url, apiKey: apiKey, timeout: timeout)
+            } else if httpResponse.statusCode == 404 {
+                return .invalid("Endpoint not found (404)")
+            } else if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                return .invalid("Authentication failed (\(httpResponse.statusCode))")
+            } else {
+                return .invalid("Server error (\(httpResponse.statusCode))")
+            }
+        } catch let error as URLError {
+            switch error.code {
+            case .timedOut:
+                return .invalid("Connection timed out")
+            case .cannotConnectToHost, .cannotFindHost:
+                return .invalid("Cannot connect to server")
+            case .notConnectedToInternet:
+                return .invalid("No internet connection")
+            default:
+                return .invalid("Network error: \(error.localizedDescription)")
+            }
+        } catch {
+            return .invalid("Unexpected error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Fallback validation using OPTIONS method
+    private static func validateWithOptions(url: URL, apiKey: String, timeout: TimeInterval) async -> EndpointValidationState {
+        var request = URLRequest(url: url)
+        request.httpMethod = "OPTIONS"
+        request.timeoutInterval = timeout
+
+        if !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return .invalid("Invalid response from server")
+            }
+
+            if (200...299).contains(httpResponse.statusCode) || httpResponse.statusCode == 405 {
+                // If OPTIONS also fails with 405, assume endpoint exists but doesn't support HEAD/OPTIONS
+                // This is acceptable for custom API endpoints
+                return .valid
+            } else {
+                return .invalid("Server error (\(httpResponse.statusCode))")
+            }
+        } catch {
+            return .invalid("Connection failed")
+        }
+    }
 }
