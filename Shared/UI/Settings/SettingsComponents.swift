@@ -77,10 +77,6 @@ struct OmriStatusIndicator: View {
         Image(systemName: statusIcon)
             .font(.system(size: fontSize, weight: .medium))
             .foregroundColor(statusColor)
-            .scaleEffect(state == .connecting ? 1.2 : 1.0)
-            .opacity(state == .connecting ? 0.6 : 1.0)
-            .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true),
-                     value: state == .connecting)
     }
 
     private var statusColor: Color {
