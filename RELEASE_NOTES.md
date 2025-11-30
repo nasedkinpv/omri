@@ -1,3 +1,37 @@
+# Omri v1.6.0
+
+## iOS Parakeet & Model Management
+
+On-device transcription comes to iOS with real-time streaming and model download UI.
+
+### What's New
+
+**iOS Parakeet On-Device (iOS 17+)**
+- Real-time streaming transcription on iPhone/iPad
+- Volatile text preview shows words as you speak
+- No API key needed, works offline
+- 25 European languages supported
+
+**Model Download UI**
+- Download/clear models from Settings → Dictation
+- Progress indicator during download
+- Retry button on failure
+- Shows "Ready" when model is available
+
+**Volatile Text Preview**
+- See in-progress transcription while speaking
+- Pulsing indicator shows active recognition
+- Smooth transitions between volatile and confirmed text
+
+### Technical
+
+- StreamingAsrManager handles iOS microphone capture
+- DictationManager extended with streaming callbacks
+- ModelDownloadManager integrated in settings UI
+- 11k lines of outdated docs removed
+
+---
+
 # Omri v1.4.1
 
 ## Performance Optimization Release
