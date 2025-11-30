@@ -93,12 +93,8 @@ iOSInjectionProject/
 .DS_Store
 
 # Development files (not for public repo)
-ARCHITECTURE.md
 CLAUDE.md
-LANDING.md
-ASSETS.md
-SPEECHANALYZER_INTEGRATION.md
-VERSION_BUMP.md
+docs/archive/
 .claude/
 .claude-flow/
 .hive-mind/

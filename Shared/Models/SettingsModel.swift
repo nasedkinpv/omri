@@ -142,6 +142,17 @@ enum TransformationProvider: String, CaseIterable {
 
 // MARK: - Settings Class
 
+/// Centralized settings management using ObservableObject pattern
+///
+/// Architecture Note: This class uses `ObservableObject` + `@UserDefault` property wrapper
+/// rather than the newer `@Observable` macro (iOS 17+) for the following reasons:
+/// 1. `@UserDefault` property wrapper provides automatic UserDefaults synchronization
+/// 2. Singleton pattern (`Settings.shared`) is well-suited for app-wide configuration
+/// 3. Integration with `objectWillChange.send()` in property didSet handlers
+/// 4. Cross-platform compatibility (macOS 14+, iOS 17+)
+///
+/// The `@Observable` macro is better suited for view-local state with `@Bindable`,
+/// while `ObservableObject` remains appropriate for global singletons with custom storage.
 class Settings: ObservableObject {
     static let shared = Settings()
 

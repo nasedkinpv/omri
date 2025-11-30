@@ -71,7 +71,31 @@ class PasteManager {
         // Append to existing text instead of replacing
         appendTextToCurrentPosition(processedText)
     }
-    
+
+    /// Update volatile (in-progress) text that may change
+    /// This replaces any previous volatile text at the cursor position
+    /// Used by streaming transcription to show real-time feedback
+    func updateVolatileText(_ text: String) async {
+        // For volatile text updates in terminal, just show the new text
+        // (Terminal doesn't support volatile text replacement)
+        #if os(macOS)
+        if TerminalWindowController.shared.isTerminalActive {
+            // For terminal, we could implement a "preview" mode
+            // For now, just log the volatile text without showing it
+            Logger.log("Volatile (terminal preview): '\(text)'", context: "Paste", level: .debug)
+            return
+        }
+        #endif
+
+        // For normal text fields, volatile text handling could be more sophisticated
+        // For now, log for debugging - in a full implementation, we could:
+        // - Track volatile text range and replace it when confirmed
+        // - Use a different visual style (e.g., grayed out text)
+        Logger.log("Volatile text: '\(text)'", context: "Paste", level: .debug)
+        // Note: We don't show volatile text to avoid flickering
+        // Confirmed text is shown via appendStreamingText
+    }
+
 }
 
 // MARK: - Text Processing

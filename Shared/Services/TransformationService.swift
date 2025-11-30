@@ -137,12 +137,6 @@ class UnifiedTransformationService: BaseHTTPService, TransformationService {
     }
 }
 
-// MARK: - Legacy Type Aliases (for backward compatibility)
-
-typealias GroqTransformationService = UnifiedTransformationService
-typealias OpenAITransformationService = UnifiedTransformationService
-typealias CustomTransformationService = UnifiedTransformationService
-
 // MARK: - Response Models
 
 struct ChatCompletionResponse: Codable {

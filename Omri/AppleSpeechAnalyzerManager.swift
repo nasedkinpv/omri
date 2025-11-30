@@ -153,8 +153,10 @@ class AppleSpeechAnalyzerManager: OnDeviceTranscriptionManager {
     }
 
     /// Stop the current transcription session
-    func stopSession() async {
-        guard isActive else { return }
+    /// - Returns: nil (Apple SpeechAnalyzer uses delegate callbacks for final text)
+    @discardableResult
+    func stopSession() async -> String? {
+        guard isActive else { return nil }
 
         Logger.log("Stopping session", context: "SpeechAnalyzer", level: .info)
 
@@ -170,6 +172,7 @@ class AppleSpeechAnalyzerManager: OnDeviceTranscriptionManager {
         cleanup()
 
         Logger.log("Session stopped", context: "SpeechAnalyzer", level: .info)
+        return nil // Final text is sent via delegate callback
     }
 
     // MARK: - Result Consumption
