@@ -26,6 +26,10 @@ struct TerminalSessionView: View {
     @State private var connectionError: String?
     @State private var dictationManager: DictationManager?
     @State private var dictationError: String?
+
+    // Streaming transcription state
+    @State private var volatileText: String = ""
+    @State private var confirmedText: String = ""
     @State private var hasConnectedSSH = false
     @State private var terminalSize: CGSize = .zero
     @State private var keyboardHeight: CGFloat = 0
@@ -98,22 +102,47 @@ struct TerminalSessionView: View {
                         }
                     }
                     .overlay(alignment: .bottomTrailing) {
-                        // Floating dictation controls (iOS 26 Liquid Glass)
-                        FloatingDictationControls(
-                            isDictating: isDictating,
-                            isLoading: isLoadingModels,
-                            onToggleDictation: toggleDictation,
-                            onClear: clearInput,
-                            onClearLongPress: clearScreen,
-                            onEnter: sendEnter,
-                            keyboardHeight: keyboardHeight,
-                            containerSize: CGSize(
-                                width: geometry.size.width,
-                                height: availableHeight  // Overlay parent size (terminal + padding)
+                        VStack(alignment: .trailing, spacing: 8) {
+                            // Volatile text preview (streaming transcription in progress)
+                            if isDictating && !volatileText.isEmpty {
+                                HStack(spacing: 8) {
+                                    // Pulsing indicator
+                                    Circle()
+                                        .fill(Color.brandMint)
+                                        .frame(width: 8, height: 8)
+                                        .opacity(0.8)
+
+                                    Text(volatileText)
+                                        .font(.system(.callout, design: .monospaced))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                        .truncationMode(.head)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                            }
+
+                            // Floating dictation controls (iOS 26 Liquid Glass)
+                            FloatingDictationControls(
+                                isDictating: isDictating,
+                                isLoading: isLoadingModels,
+                                onToggleDictation: toggleDictation,
+                                onClear: clearInput,
+                                onClearLongPress: clearScreen,
+                                onEnter: sendEnter,
+                                keyboardHeight: keyboardHeight,
+                                containerSize: CGSize(
+                                    width: geometry.size.width,
+                                    height: availableHeight  // Overlay parent size (terminal + padding)
+                                )
                             )
-                        )
+                        }
                         .padding(.trailing, horizontalPadding)
                         .padding(.bottom, max(geometry.safeAreaInsets.bottom, 8))
+                        .animation(.easeInOut(duration: 0.2), value: volatileText)
                     }
                 } else {
                     terminalPlaceholder
@@ -357,6 +386,21 @@ struct TerminalSessionView: View {
             isLoadingModels = isLoading
         }
 
+        // Streaming mode callbacks for real-time transcription (Parakeet)
+        manager.onVolatileText = { text in
+            Logger.log("Volatile text - '\(text)'", context: "Dictation", level: .debug)
+            volatileText = text
+        }
+
+        manager.onConfirmedText = { incrementText in
+            // incrementText is just the new confirmed portion, not accumulated
+            Logger.log("Confirmed increment - '\(incrementText)'", context: "Dictation", level: .info)
+            confirmedText += incrementText
+            volatileText = ""  // Clear volatile when we get confirmed
+            // Send confirmed increment to terminal immediately
+            terminalManager?.sendText(incrementText)
+        }
+
         dictationManager = manager
     }
 
@@ -368,9 +412,14 @@ struct TerminalSessionView: View {
             Task {
                 await manager.stopDictation()
                 isDictating = false
+                // Clear streaming text state
+                volatileText = ""
+                confirmedText = ""
             }
         } else {
-            // Start dictation
+            // Start dictation - reset streaming text state
+            volatileText = ""
+            confirmedText = ""
             Task {
                 do {
                     try await manager.startDictation()
@@ -623,10 +672,40 @@ class iOSTerminalManager: TerminalViewDelegate {
 
 // MARK: - iOS Terminal View (UIViewRepresentable)
 
+/// UIViewRepresentable wrapper for SwiftTerm's TerminalView
+/// Follows Apple's best practices:
+/// - Uses Coordinator for delegate management
+/// - Implements sizeThatFits for proper SwiftUI layout integration
+/// - Manages UIKit lifecycle correctly
 struct iOSTerminalView: UIViewRepresentable {
     let manager: iOSTerminalManager
     let size: CGSize
     let fontSize: CGFloat
+
+    // MARK: - Coordinator
+
+    /// Coordinator manages the bridge between UIKit delegate callbacks and SwiftUI
+    /// This follows Apple's recommended pattern for UIViewRepresentable
+    class Coordinator: NSObject {
+        var parent: iOSTerminalView
+        var hasDisplayedWelcome = false
+
+        init(_ parent: iOSTerminalView) {
+            self.parent = parent
+        }
+
+        func displayWelcomeMessageIfNeeded() {
+            guard !hasDisplayedWelcome else { return }
+            hasDisplayedWelcome = true
+            parent.manager.displayWelcomeMessage()
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    // MARK: - UIViewRepresentable
 
     func makeUIView(context: Context) -> TerminalView {
         let terminalView = manager.terminalView
@@ -650,7 +729,7 @@ struct iOSTerminalView: UIViewRepresentable {
         resizeTerminal(terminalView, to: size)
 
         // Display welcome message now that terminal is sized
-        manager.displayWelcomeMessage()
+        context.coordinator.displayWelcomeMessageIfNeeded()
 
         // Make terminal first responder to receive keyboard input
         DispatchQueue.main.async {
@@ -672,6 +751,22 @@ struct iOSTerminalView: UIViewRepresentable {
             resizeTerminal(uiView, to: size)
         }
     }
+
+    /// Provides preferred size to SwiftUI layout system
+    /// Returns the exact size passed in, allowing parent GeometryReader to control sizing
+    /// This follows Apple's UIViewRepresentable best practices for custom sizing
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        uiView: TerminalView,
+        context: Context
+    ) -> CGSize? {
+        // Return the size we were given - terminal fills available space
+        // The parent GeometryReader calculates the correct size accounting for
+        // keyboard, safe areas, and floating controls
+        return size
+    }
+
+    // MARK: - Terminal Sizing
 
     private func resizeTerminal(_ terminalView: TerminalView, to size: CGSize) {
         guard size.width > 0 && size.height > 0 else {

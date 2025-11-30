@@ -7,6 +7,11 @@
 //
 //  Voice Activity Detection Manager using Silero VAD via FluidAudio
 //
+//  ⚠️ EXPERIMENTAL FEATURE
+//  Real-time streaming transcription using Voice Activity Detection.
+//  This feature is experimental and may have higher latency than batch mode
+//  due to multiple API calls. Use batch mode for fastest dictate→paste.
+//
 
 @preconcurrency import AVFoundation
 import Foundation
@@ -39,15 +44,115 @@ enum VADError: LocalizedError {
     }
 }
 
+/// Output format for VAD audio chunks
+enum VADAudioFormat {
+    case floatSamples   // For on-device (Parakeet) - direct Float array
+    case wavData        // For cloud APIs - WAV file data
+}
+
 @MainActor
 protocol VADManagerDelegate: AnyObject {
     func vadManagerDidStartListening()
     func vadManagerDidStopListening()
     func vadManagerDidDetectSpeechStart()
     func vadManagerDidDetectSpeechEnd()
-    func vadManager(didCompleteAudioSamples samples: [Float], duration: Double)
-    func vadManager(didCompleteAudioChunk audioData: Data, duration: Double)
+    /// Unified callback - only generates the format actually needed
+    func vadManager(didCompleteSpeechChunk chunk: VADSpeechChunk)
     func vadManager(didEncounterError error: VADError)
+}
+
+/// Speech chunk with lazy format conversion - only converts when accessed
+struct VADSpeechChunk {
+    let buffers: [AVAudioPCMBuffer]
+    let format: AVAudioFormat
+    let duration: Double
+
+    /// Get Float samples (for Parakeet on-device)
+    /// Computed lazily - only when actually needed
+    var floatSamples: [Float]? {
+        guard !buffers.isEmpty else { return nil }
+
+        let totalFrames = buffers.reduce(0) { $0 + Int($1.frameLength) }
+        guard totalFrames > 0 else { return nil }
+
+        var samples: [Float] = []
+        samples.reserveCapacity(totalFrames)
+
+        for buffer in buffers {
+            guard let floatChannelData = buffer.floatChannelData else { continue }
+            let frameLength = Int(buffer.frameLength)
+            let channelCount = Int(buffer.format.channelCount)
+
+            if channelCount == 1 {
+                let channel = floatChannelData[0]
+                for i in 0..<frameLength {
+                    samples.append(channel[i])
+                }
+            } else if channelCount == 2 {
+                let leftChannel = floatChannelData[0]
+                let rightChannel = floatChannelData[1]
+                for i in 0..<frameLength {
+                    samples.append((leftChannel[i] + rightChannel[i]) / 2.0)
+                }
+            }
+        }
+
+        return samples
+    }
+
+    /// Get WAV data (for cloud APIs)
+    /// Computed lazily and kept in memory - no file I/O
+    var wavData: Data? {
+        guard !buffers.isEmpty else { return nil }
+
+        // Calculate total size needed
+        let totalFrames = buffers.reduce(0) { $0 + Int($1.frameLength) }
+        let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
+        let dataSize = totalFrames * bytesPerFrame
+
+        // Build WAV header + data in memory (no file I/O)
+        var wavData = Data()
+        wavData.reserveCapacity(44 + dataSize) // WAV header is 44 bytes
+
+        // WAV header
+        let sampleRate = UInt32(format.sampleRate)
+        let channels = UInt16(format.channelCount)
+        let bitsPerSample: UInt16 = 32 // Float32
+        let byteRate = sampleRate * UInt32(channels) * UInt32(bitsPerSample / 8)
+        let blockAlign = channels * (bitsPerSample / 8)
+
+        // RIFF header
+        wavData.append(contentsOf: "RIFF".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(36 + dataSize).littleEndian) { Array($0) })
+        wavData.append(contentsOf: "WAVE".utf8)
+
+        // fmt chunk
+        wavData.append(contentsOf: "fmt ".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(16).littleEndian) { Array($0) }) // chunk size
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(3).littleEndian) { Array($0) }) // IEEE float
+        wavData.append(contentsOf: withUnsafeBytes(of: channels.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: sampleRate.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: byteRate.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: blockAlign.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: bitsPerSample.littleEndian) { Array($0) })
+
+        // data chunk
+        wavData.append(contentsOf: "data".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(dataSize).littleEndian) { Array($0) })
+
+        // Audio data
+        for buffer in buffers {
+            guard let floatChannelData = buffer.floatChannelData else { continue }
+            let frameLength = Int(buffer.frameLength)
+            let channel = floatChannelData[0] // Mono
+
+            for i in 0..<frameLength {
+                withUnsafeBytes(of: channel[i]) { wavData.append(contentsOf: $0) }
+            }
+        }
+
+        return wavData
+    }
 }
 
 // MARK: - FluidAudio Implementation
@@ -130,10 +235,11 @@ class VADManager: ObservableObject {
             return
         }
 
+        // Reset all state for new session
         isListening = true
-        currentSpeechBuffers.removeAll(keepingCapacity: true)
         isSpeechDetected = false
         speechStartTime = 0
+        currentSpeechBuffers.removeAll(keepingCapacity: true)
         currentRecordingFormat = nil
 
         // Reset stream state to start fresh timing for this recording session
@@ -153,7 +259,9 @@ class VADManager: ObservableObject {
             Logger.log("Stopping mid-speech, processing partial chunk (estimated \(String(format: "%.2f", estimatedDuration))s)", context: "VAD", level: .info)
 
             if estimatedDuration >= minSpeechDuration {
-                processCollectedSpeechBuffers(duration: estimatedDuration)
+                emitSpeechChunk(duration: estimatedDuration)
+            } else {
+                currentSpeechBuffers.removeAll(keepingCapacity: true)
             }
         }
 
@@ -222,15 +330,18 @@ class VADManager: ObservableObject {
                 // Update stream state for next chunk
                 self.streamState = result.state
 
-                // Handle VAD events FIRST to set proper flags
-                // This ensures the buffer that triggers speechStart gets collected
+                // FIX: Collect buffer BEFORE handling event to prevent losing first speech buffer
+                // The buffer that triggers speechStart should be included in the speech segment
+                let wasSpeechDetected = self.isSpeechDetected
+
+                // Handle VAD events to update state
                 if let event = result.event {
-                    self.handleVADEvent(event)
+                    self.handleVADEvent(event, triggeringBuffer: buffer)
                 }
 
-                // Collect audio buffer if currently detecting speech
-                // After event handling, this properly includes the triggering buffer
-                if self.isSpeechDetected {
+                // Collect audio buffer if we're detecting speech
+                // Include buffer if: was already in speech OR just started speech (event triggered it)
+                if wasSpeechDetected || self.isSpeechDetected {
                     self.currentSpeechBuffers.append(buffer)
                 }
             }
@@ -242,15 +353,14 @@ class VADManager: ObservableObject {
         }
     }
 
-    private func handleVADEvent(_ event: VadStreamEvent) {
+    private func handleVADEvent(_ event: VadStreamEvent, triggeringBuffer: AVAudioPCMBuffer? = nil) {
         switch event.kind {
         case .speechStart:
             isSpeechDetected = true
             speechStartTime = event.time ?? 0
-            currentSpeechBuffers.removeAll(keepingCapacity: true)
+            // Don't clear buffers here - the triggering buffer will be added by the caller
             Logger.log("Speech started at \(speechStartTime)s", context: "VAD", level: .info)
             delegate?.vadManagerDidDetectSpeechStart()
-            // Note: Current buffer will be collected after this event handler returns
 
         case .speechEnd:
             isSpeechDetected = false
@@ -258,113 +368,43 @@ class VADManager: ObservableObject {
             let speechDuration = speechEndTime - speechStartTime
             Logger.log("Speech ended at \(speechEndTime)s (duration: \(String(format: "%.2f", speechDuration))s)", context: "VAD", level: .info)
 
-            // Process collected speech buffers into audio chunk
+            // Process collected speech buffers into unified chunk
             if currentSpeechBuffers.isEmpty {
                 Logger.log("No audio buffers collected, skipping chunk", context: "VAD", level: .debug)
             } else if speechDuration < minSpeechDuration {
                 Logger.log("Speech too short (\(String(format: "%.2f", speechDuration))s < \(String(format: "%.2f", minSpeechDuration))s threshold), skipping chunk", context: "VAD", level: .debug)
+                currentSpeechBuffers.removeAll(keepingCapacity: true)
             } else {
-                processCollectedSpeechBuffers(duration: speechDuration)
+                emitSpeechChunk(duration: speechDuration)
             }
 
             delegate?.vadManagerDidDetectSpeechEnd()
         }
     }
 
-    private func processCollectedSpeechBuffers(duration: Double) {
+    /// Emit speech chunk using unified callback - lazy conversion means no wasted work
+    private func emitSpeechChunk(duration: Double) {
         guard !currentSpeechBuffers.isEmpty,
               let format = currentRecordingFormat else {
             Logger.log("No speech buffers or format to process", context: "VAD", level: .debug)
             return
         }
 
-        // Extract Float samples directly from buffers for on-device processing
-        guard let floatSamples = extractFloatSamples(from: currentSpeechBuffers) else {
-            Logger.log("Failed to extract Float samples from buffers", context: "VAD", level: .error)
-            return
-        }
+        let totalFrames = currentSpeechBuffers.reduce(0) { $0 + Int($1.frameLength) }
+        Logger.log("Emitting speech chunk: \(totalFrames) frames (\(String(format: "%.2f", duration))s)", context: "VAD", level: .info)
 
-        Logger.log("Generated \(floatSamples.count) Float samples (\(String(format: "%.2f", duration))s)", context: "VAD", level: .info)
+        // Create unified chunk - format conversion is lazy (only when accessed)
+        let chunk = VADSpeechChunk(
+            buffers: currentSpeechBuffers,
+            format: format,
+            duration: duration
+        )
 
-        // Emit Float samples for immediate transcription (on-device)
-        delegate?.vadManager(didCompleteAudioSamples: floatSamples, duration: duration)
-
-        // Also emit WAV data for cloud APIs (backward compatibility)
-        if let audioData = pcmBuffersToWavData(buffers: currentSpeechBuffers, format: format) {
-            delegate?.vadManager(didCompleteAudioChunk: audioData, duration: duration)
-        }
+        // Single unified callback - consumer decides which format to use
+        delegate?.vadManager(didCompleteSpeechChunk: chunk)
 
         // Clear processed buffers
         currentSpeechBuffers.removeAll(keepingCapacity: true)
-    }
-
-    private func extractFloatSamples(from buffers: [AVAudioPCMBuffer]) -> [Float]? {
-        guard !buffers.isEmpty else { return nil }
-
-        // Calculate total sample count
-        let totalFrames = buffers.reduce(0) { $0 + Int($1.frameLength) }
-        guard totalFrames > 0 else { return nil }
-
-        // Pre-allocate array for efficiency
-        var samples: [Float] = []
-        samples.reserveCapacity(totalFrames)
-
-        // Extract Float32 samples from each buffer
-        for buffer in buffers {
-            guard let floatChannelData = buffer.floatChannelData else { continue }
-            let frameLength = Int(buffer.frameLength)
-            let channelCount = Int(buffer.format.channelCount)
-
-            // Use first channel (mono) or average channels (stereo)
-            if channelCount == 1 {
-                // Mono - direct copy
-                let channel = floatChannelData[0]
-                for i in 0..<frameLength {
-                    samples.append(channel[i])
-                }
-            } else if channelCount == 2 {
-                // Stereo - average to mono
-                let leftChannel = floatChannelData[0]
-                let rightChannel = floatChannelData[1]
-                for i in 0..<frameLength {
-                    samples.append((leftChannel[i] + rightChannel[i]) / 2.0)
-                }
-            }
-        }
-
-        return samples
-    }
-
-    private func pcmBuffersToWavData(buffers: [AVAudioPCMBuffer], format: AVAudioFormat) -> Data? {
-        guard !buffers.isEmpty else { return nil }
-
-        let tempURL = createTemporaryFileURL()
-        defer { cleanupTemporaryFile(at: tempURL) }
-
-        do {
-            let outputFile = try AVAudioFile(forWriting: tempURL, settings: format.settings)
-
-            // Write all buffers efficiently
-            for buffer in buffers {
-                try outputFile.write(from: buffer)
-            }
-
-            return try Data(contentsOf: tempURL)
-
-        } catch {
-            Logger.log("Error converting buffers to WAV: \(error)", context: "VAD", level: .error)
-            return nil
-        }
-    }
-
-    private func createTemporaryFileURL() -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let fileName = "vad_chunk_\(UUID().uuidString).wav"
-        return tempDir.appendingPathComponent(fileName)
-    }
-
-    private func cleanupTemporaryFile(at url: URL) {
-        try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - Audio Format Handling

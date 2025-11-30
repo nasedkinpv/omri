@@ -16,6 +16,10 @@ struct DictationSettingsContent: View {
     @Binding var currentProvider: String
     @Binding var apiKeyInput: String
 
+    // Model download state
+    @State private var parakeetState: ModelDownloadState = .notDownloaded
+    @State private var isCheckingModel = false
+
     var body: some View {
         #if os(macOS)
         macOSLayout
@@ -95,6 +99,11 @@ struct DictationSettingsContent: View {
                     SettingsSectionFooter(text: transcriptionFooterText)
                 }
 
+                // Parakeet Model Download (for on-device transcription)
+                if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                    parakeetModelSection
+                }
+
                 // Custom Base URL
                 if settings.transcriptionProvider.supportsCustomBaseURL {
                     VStack(alignment: .leading, spacing: 16) {
@@ -161,20 +170,30 @@ struct DictationSettingsContent: View {
                     }
                 }
 
-                // Voice Activity Detection
+                // Voice Activity Detection / Streaming Mode
                 if !settings.transcriptionProvider.isOnDevice || settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
                     VStack(alignment: .leading, spacing: 16) {
-                        SettingsSectionHeader(title: "Smart Voice Detection")
+                        HStack(spacing: 8) {
+                            SettingsSectionHeader(title: settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Streaming Mode" : "Smart Voice Detection")
+                            if settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
+                                Text("Experimental")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.orange)
+                                    .clipShape(Capsule())
+                            }
+                        }
 
-                        Toggle("Enable Smart Recording", isOn: $settings.enableVAD)
+                        Toggle(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Enable Real-Time Streaming" : "Enable Smart Recording", isOn: $settings.enableVAD)
 
-                        if settings.enableVAD {
+                        if settings.enableVAD && settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
                             vadControls
                         }
 
-                        if settings.enableVAD {
-                            SettingsSectionFooter(text: vadFooterText)
-                        }
+                        SettingsSectionFooter(text: vadFooterText)
                     }
                 }
 
@@ -250,6 +269,17 @@ struct DictationSettingsContent: View {
                 Text(transcriptionFooterText)
             }
 
+            // Parakeet Model Download (for on-device transcription)
+            if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                Section {
+                    parakeetModelRow
+                } header: {
+                    Text("On-Device Model")
+                } footer: {
+                    Text("~600 MB download. Required for on-device transcription. Runs entirely on your device.")
+                }
+            }
+
             // Custom Base URL for OpenAI Compatible providers
             if settings.transcriptionProvider.supportsCustomBaseURL {
                 Section {
@@ -314,20 +344,30 @@ struct DictationSettingsContent: View {
                 }
             }
 
-            // Voice Activity Detection (hide for Apple - it has built-in VAD, show for Parakeet and cloud providers)
+            // Voice Activity Detection / Streaming Mode (hide for Apple which has built-in VAD)
             if !settings.transcriptionProvider.isOnDevice || settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
                 Section {
-                    Toggle("Enable Smart Recording", isOn: $settings.enableVAD)
+                    Toggle(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Enable Real-Time Streaming" : "Enable Smart Recording", isOn: $settings.enableVAD)
 
-                    if settings.enableVAD {
+                    if settings.enableVAD && settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
                         vadControls
                     }
                 } header: {
-                    Text("Smart Voice Detection")
-                } footer: {
-                    if settings.enableVAD {
-                        Text(vadFooterText)
+                    HStack(spacing: 8) {
+                        Text(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Streaming Mode" : "Smart Voice Detection")
+                        if settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
+                            Text("Experimental")
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange)
+                                .clipShape(Capsule())
+                        }
                     }
+                } footer: {
+                    Text(vadFooterText)
                 }
             }
         }
@@ -440,6 +480,148 @@ struct DictationSettingsContent: View {
         }
     }
 
+    // MARK: - Parakeet Model Download UI
+
+    /// macOS version - full section with header
+    @available(macOS 14.0, iOS 17.0, *)
+    @ViewBuilder
+    private var parakeetModelSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SettingsSectionHeader(title: "On-Device Model")
+
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Parakeet TDT v3")
+                        .font(.headline)
+                    Text("~600 MB • 25 languages • NVIDIA CC-BY 4.0")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                modelStatusView
+            }
+
+            SettingsSectionFooter(text: "Required for on-device transcription. Runs entirely on your device.")
+        }
+        .task {
+            await checkParakeetModel()
+        }
+    }
+
+    /// iOS version - row for Form
+    @available(macOS 14.0, iOS 17.0, *)
+    @ViewBuilder
+    private var parakeetModelRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Parakeet TDT v3")
+                    .font(.headline)
+                Text("25 languages")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            modelStatusView
+        }
+        .task {
+            await checkParakeetModel()
+        }
+    }
+
+    /// Shared status view (buttons and indicators)
+    @available(macOS 14.0, iOS 17.0, *)
+    @ViewBuilder
+    private var modelStatusView: some View {
+        switch parakeetState {
+        case .notDownloaded:
+            Button("Download") {
+                Task {
+                    await downloadParakeetModel()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+
+        case .downloading:
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Downloading...")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+        case .downloaded:
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Ready")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Button("Clear") {
+                    clearParakeetModel()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+        case .error(let message):
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+
+                    Button("Retry") {
+                        Task {
+                            await downloadParakeetModel()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Text(message)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+        }
+    }
+
+    // MARK: - Model Management
+
+    @available(macOS 14.0, iOS 17.0, *)
+    @MainActor
+    private func checkParakeetModel() async {
+        guard !isCheckingModel else { return }
+        isCheckingModel = true
+
+        let manager = ModelDownloadManager.shared
+        await manager.checkModelStatus("parakeet-tdt-v3")
+        parakeetState = manager.state(for: "parakeet-tdt-v3")
+
+        isCheckingModel = false
+    }
+
+    @available(macOS 14.0, iOS 17.0, *)
+    @MainActor
+    private func downloadParakeetModel() async {
+        parakeetState = .downloading
+
+        let manager = ModelDownloadManager.shared
+        await manager.downloadModel("parakeet-tdt-v3")
+        parakeetState = manager.state(for: "parakeet-tdt-v3")
+    }
+
+    @available(macOS 14.0, iOS 17.0, *)
+    private func clearParakeetModel() {
+        let manager = ModelDownloadManager.shared
+        manager.clearModel("parakeet-tdt-v3")
+        parakeetState = .notDownloaded
+    }
+
     // MARK: - Computed Properties
 
     private var transcriptionFooterText: String {
@@ -458,10 +640,18 @@ struct DictationSettingsContent: View {
     }
 
     private var vadFooterText: String {
-        if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-            return "Real-time streaming transcription. Text appears as you speak, completely on-device."
+        if settings.enableVAD {
+            if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                return "Low-latency streaming transcription. Words appear as you speak (~0.5s latency). For fastest dictate-to-paste, disable this and use batch mode."
+            } else {
+                return "⚠️ Not recommended for cloud APIs. Each speech segment requires a separate API call, causing delays. Disable this for best experience with Groq/OpenAI."
+            }
         } else {
-            return "Automatically starts recording when speech is detected and stops during silence"
+            if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
+                return "Batch mode: fastest dictate-to-paste. All audio processed at once when you release the key."
+            } else {
+                return "Recommended: fastest dictate-to-paste. Single API call when you release the key."
+            }
         }
     }
 

@@ -50,6 +50,7 @@ struct Logger {
         #endif
     }
 
+
     // MARK: - Logging Methods
 
     /// Log a debug message (only in DEBUG builds)

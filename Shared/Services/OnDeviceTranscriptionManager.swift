@@ -22,7 +22,9 @@ protocol OnDeviceTranscriptionManager: AnyObject {
     func startSession(locale: Locale) async throws -> AVAudioFormat
 
     /// Stop the transcription session
-    func stopSession() async
+    /// - Returns: Optional final transcription text (for streaming mode)
+    @discardableResult
+    func stopSession() async -> String?
 
     /// Feed audio buffer for transcription
     /// - Parameter buffer: PCM audio buffer in the format returned by startSession()

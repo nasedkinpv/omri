@@ -12,10 +12,10 @@ import Foundation
 
 struct AppVersion {
     /// Semantic version (major.minor.patch)
-    static let marketing = "1.5.0"
+    static let marketing = "1.6.0"
 
     /// Build identifier (year.month or build number)
-    static let build = "2025.10"
+    static let build = "2025.11"
 
     /// Display string for UI
     static var display: String {
