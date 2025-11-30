@@ -10,8 +10,6 @@ A native macOS and iOS app for voice transcription. Choose from 100% private on-
 
 ## Architecture
 
-### High-Level System Architecture
-
 ```mermaid
 flowchart TB
     subgraph Input["Voice Input"]
@@ -68,230 +66,21 @@ flowchart TB
     PM --> CLIP
 ```
 
-### Cross-Platform Code Sharing
-
-```mermaid
-flowchart LR
-    subgraph Shared["Shared (iOS + macOS)"]
-        Models["Models\n• Settings\n• SSHConnection"]
-        Services["Services\n• Transcription\n• Transformation\n• Keychain"]
-        Audio["Audio\n• AudioRecorder"]
-        UI["UI Components\n• FloatingControls\n• SettingsViews"]
-        Terminal["Terminal\n• SSHConnectionsView"]
-    end
-
-    subgraph macOS["macOS Target"]
-        AppDelegate
-        AudioManager
-        PasteManager
-        VADManager
-        AppleSpeech["AppleSpeechAnalyzer"]
-        MacTerminal["TerminalWindowController"]
-    end
-
-    subgraph iOS["iOS Target"]
-        OmriApp["OmriApp"]
-        DictationMgr["DictationManager"]
-        SSHClient["SSHClientManager"]
-        iOSTerminal["TerminalSessionView"]
-    end
-
-    Shared --> macOS
-    Shared --> iOS
-```
-
-### Service Layer Architecture
-
-```mermaid
-classDiagram
-    class TranscriptionService {
-        <<protocol>>
-        +transcribe(audioData, fileName, model, language) Response
-    }
-
-    class BaseHTTPService {
-        +createRequest(contentType) URLRequest
-        +performRequest(request, responseType) T
-    }
-
-    class GroqTranscriptionService {
-        +transcribe()
-        +translate()
-    }
-
-    class OpenAITranscriptionService {
-        +transcribe()
-    }
-
-    class CustomTranscriptionService {
-        +transcribe()
-    }
-
-    class OnDeviceTranscriptionManager {
-        <<protocol>>
-        +startSession(locale) AVAudioFormat
-        +feedAudio(buffer)
-        +stopSession()
-        +isInitialized: Bool
-    }
-
-    class ParakeetTranscriptionManager {
-        +initializeModels()
-        +transcribeChunk(samples) String?
-    }
-
-    class AppleSpeechAnalyzerManager {
-        +finishAudioInput()
-    }
-
-    TranscriptionService <|.. GroqTranscriptionService
-    TranscriptionService <|.. OpenAITranscriptionService
-    TranscriptionService <|.. CustomTranscriptionService
-    BaseHTTPService <|-- GroqTranscriptionService
-    BaseHTTPService <|-- OpenAITranscriptionService
-    BaseHTTPService <|-- CustomTranscriptionService
-    OnDeviceTranscriptionManager <|.. ParakeetTranscriptionManager
-    OnDeviceTranscriptionManager <|.. AppleSpeechAnalyzerManager
-```
-
-### Audio Processing Pipeline
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant AudioManager
-    participant VAD as VADManager
-    participant Provider as Transcription Provider
-    participant PasteManager
-    participant App as Target App
-
-    User->>AudioManager: Hold fn key
-    AudioManager->>AudioManager: Start AVAudioEngine
-
-    alt VAD Enabled
-        loop Audio Chunks
-            AudioManager->>VAD: processAudioBuffer
-            VAD-->>VAD: Detect speech
-            VAD->>Provider: Speech chunk
-            Provider-->>PasteManager: Partial text
-            PasteManager->>App: Stream text
-        end
-    else Batch Mode
-        AudioManager->>AudioManager: Collect buffers
-    end
-
-    User->>AudioManager: Release fn key
-    AudioManager->>Provider: Process audio
-    Provider-->>PasteManager: Final text
-
-    alt AI Enhancement (fn+shift)
-        PasteManager->>PasteManager: Transform with AI
-    end
-
-    PasteManager->>App: Paste text
-```
-
-### Terminal Architecture (iOS)
-
-```mermaid
-flowchart TB
-    subgraph SwiftUI["SwiftUI Layer"]
-        TSV["TerminalSessionView"]
-        FDC["FloatingDictationControls"]
-        GR["GeometryReader"]
-    end
-
-    subgraph UIKit["UIKit Bridge"]
-        ITV["iOSTerminalView\n(UIViewRepresentable)"]
-        COORD["Coordinator"]
-        CTA["CustomTerminalAccessory"]
-    end
-
-    subgraph SwiftTerm["SwiftTerm"]
-        TV["TerminalView"]
-        TVD["TerminalViewDelegate"]
-    end
-
-    subgraph SSH["SSH Layer"]
-        ITM["iOSTerminalManager"]
-        SCM["SSHClientManager"]
-        CITADEL["Citadel SSH"]
-    end
-
-    TSV --> GR
-    GR --> ITV
-    ITV --> COORD
-    ITV --> TV
-    TV --> CTA
-    ITM --> TVD
-    ITM --> SCM
-    SCM --> CITADEL
-    TSV --> FDC
-```
-
-### Settings & State Management
-
-```mermaid
-flowchart LR
-    subgraph Storage["Persistent Storage"]
-        UD["UserDefaults\n(@UserDefault)"]
-        KC["Keychain\n(API Keys)"]
-    end
-
-    subgraph State["Observable State"]
-        Settings["Settings.shared\n(ObservableObject)"]
-        TermSettings["TerminalSettings.shared"]
-        ConnState["ConnectionState\n(@Observable)"]
-    end
-
-    subgraph Views["SwiftUI Views"]
-        SettingsView
-        DictationSettings
-        TerminalView
-    end
-
-    UD <--> Settings
-    KC <--> Settings
-    Settings --> Views
-    TermSettings --> Views
-    ConnState --> Views
-```
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 
 ## Screenshots
 
-<table>
-<tr>
-<td width="50%">
+| Menu Bar | Dictation |
+|:---:|:---:|
+| ![Menu Bar](screenshots/omri_menu.png) | ![Dictation](screenshots/omri-settings-dictation.png) |
 
-### Menu Bar
-![Menu Bar](screenshots/omri_menu.png)
+| AI Polish | General |
+|:---:|:---:|
+| ![AI Polish](screenshots/omri-settings-ai-polish.png) | ![General](screenshots/omri-settings-general.png) |
 
-</td>
-<td width="50%">
-
-### Dictation Settings
-![Dictation](screenshots/omri-settings-dictation.png)
-
-</td>
-</tr>
-<tr>
-<td>
-
-### AI Polish
-![AI Polish](screenshots/omri-settings-ai-polish.png)
-
-</td>
-<td>
-
-### General Settings
-![General](screenshots/omri-settings-general.png)
-
-</td>
-</tr>
-</table>
-
-### About
-![About](screenshots/omri-settings-about.png)
+| About |
+|:---:|
+| ![About](screenshots/omri-settings-about.png) |
 
 ## Features
 
@@ -330,7 +119,7 @@ flowchart LR
    - **Local AI Enhancement**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
 
 2. **Download & Install**
-   
+
    **Option A: Download Release (Recommended)**
    - Go to [Releases](https://github.com/nasedkinpv/omri/releases)
    - Download latest `Omri-vX.X.X-apple-silicon.zip`
@@ -348,14 +137,14 @@ flowchart LR
 
 3. **Setup**
    - Grant microphone permission
-   - Grant accessibility permission  
+   - Grant accessibility permission
    - Configure your AI provider in settings (API key for cloud, base URL for local)
    - Start dictating!
 
 ## Usage
 
 - **Basic**: Hold `fn` key → speak → release
-- **AI Enhanced**: Hold `fn + shift` → speak → release  
+- **AI Enhanced**: Hold `fn + shift` → speak → release
 - Text appears where your cursor is
 
 ## Supported Models
