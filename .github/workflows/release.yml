@@ -18,7 +18,8 @@ jobs:
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.0'
+        # AppIcon.icon (Icon Composer 2) fails actool < 26.6; no Xcode 27 on hosted runners yet
+        xcode-version: latest
         
     - name: Get version from tag
       id: get_version
