@@ -127,6 +127,17 @@ struct AboutSettingsContent: View {
                         FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any Mac application", style: .system)
                     }
                 }
+
+                // Acknowledgments
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Acknowledgments")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+
+                    acknowledgmentsContent
+                }
             }
             .padding()
         }
@@ -197,6 +208,39 @@ struct AboutSettingsContent: View {
                 FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .premium)
                 FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any iOS application", style: .system)
             }
+
+            // Acknowledgments
+            Section("Acknowledgments") {
+                acknowledgmentsContent
+            }
+        }
+    }
+
+    // MARK: - Acknowledgments (shared)
+
+    @ViewBuilder
+    private var acknowledgmentsContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("On-device transcription uses the NVIDIA Nemotron 3.5 ASR model. Copyright © NVIDIA Corporation. Licensed under the OpenMDW-1.1 license. CoreML conversion and runtime by FluidAudio (Apache-2.0).")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 16) {
+                Button("OpenMDW-1.1 License") {
+                    openURL("https://openmdw.ai/license/1-1/")
+                }
+                Button("Model Card") {
+                    openURL("https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b")
+                }
+                Button("FluidAudio") {
+                    openURL("https://github.com/FluidInference/FluidAudio")
+                }
+            }
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(Color("BrandBlue"))
+            .buttonStyle(.plain)
         }
     }
 
