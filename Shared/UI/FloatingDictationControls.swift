@@ -158,7 +158,7 @@ struct FloatingDictationControls: View {
         let accessHint: String
 
         if isLoading {
-            buttonTint = Color("BrandBlue").opacity(0.6)
+            buttonTint = Color("BrandPrimary").opacity(0.6)
             accessLabel = "Loading Models"
             accessHint = "Please wait while models are downloaded"
         } else if isDictating {
@@ -166,7 +166,7 @@ struct FloatingDictationControls: View {
             accessLabel = "Stop Dictation"
             accessHint = "Tap to stop, or hold to record"
         } else {
-            buttonTint = Color("BrandBlue")
+            buttonTint = Color("BrandPrimary")
             accessLabel = "Start Dictation"
             accessHint = "Tap to start, or hold for 1s to record"
         }
@@ -332,11 +332,7 @@ struct FloatingDictationControls: View {
 
     private var glassButtonStyle: some PrimitiveButtonStyle {
         #if os(iOS)
-        if #available(iOS 26.0, *) {
-            return GlassButtonStyle()
-        } else {
-            return BorderedButtonStyle()
-        }
+        return GlassButtonStyle()
         #else
         return BorderedButtonStyle()
         #endif
@@ -344,11 +340,7 @@ struct FloatingDictationControls: View {
 
     private var glassProminentButtonStyle: some PrimitiveButtonStyle {
         #if os(iOS)
-        if #available(iOS 26.0, *) {
-            return GlassProminentButtonStyle()
-        } else {
-            return BorderedProminentButtonStyle()
-        }
+        return GlassProminentButtonStyle()
         #else
         return BorderedProminentButtonStyle()
         #endif
@@ -416,22 +408,16 @@ struct FloatingDictationControls: View {
 // MARK: - Glass Effect Modifier (iOS 26+)
 
 extension View {
-    /// Applies iOS 26 Liquid Glass effect on supported OS versions,
-    /// falls back to regular material capsule on iOS 17-25 and macOS
+    /// Liquid Glass capsule on iOS, regular material on macOS
     @ViewBuilder
     func applyGlassEffect() -> some View {
         #if os(iOS)
-        if #available(iOS 26.0, *) {
-            self
-                .background {
-                    Capsule()
-                        .fill(.clear)
-                        .glassEffect(.regular.interactive())
-                }
-        } else {
-            self
-                .background(.regularMaterial, in: Capsule())
-        }
+        self
+            .background {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(.regular.interactive())
+            }
         #else
         self
             .background(.regularMaterial, in: Capsule())

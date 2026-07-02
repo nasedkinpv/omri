@@ -29,7 +29,6 @@ struct TerminalSessionView: View {
 
     // Streaming transcription state
     @State private var volatileText: String = ""
-    @State private var confirmedText: String = ""
     @State private var hasConnectedSSH = false
     @State private var terminalSize: CGSize = .zero
     @State private var keyboardHeight: CGFloat = 0
@@ -108,7 +107,7 @@ struct TerminalSessionView: View {
                                 HStack(spacing: 8) {
                                     // Pulsing indicator
                                     Circle()
-                                        .fill(Color.brandMint)
+                                        .fill(Color("BrandSecondary"))
                                         .frame(width: 8, height: 8)
                                         .opacity(0.8)
 
@@ -392,15 +391,6 @@ struct TerminalSessionView: View {
             volatileText = text
         }
 
-        manager.onConfirmedText = { incrementText in
-            // incrementText is just the new confirmed portion, not accumulated
-            Logger.log("Confirmed increment - '\(incrementText)'", context: "Dictation", level: .info)
-            confirmedText += incrementText
-            volatileText = ""  // Clear volatile when we get confirmed
-            // Send confirmed increment to terminal immediately
-            terminalManager?.sendText(incrementText)
-        }
-
         dictationManager = manager
     }
 
@@ -412,14 +402,10 @@ struct TerminalSessionView: View {
             Task {
                 await manager.stopDictation()
                 isDictating = false
-                // Clear streaming text state
                 volatileText = ""
-                confirmedText = ""
             }
         } else {
-            // Start dictation - reset streaming text state
             volatileText = ""
-            confirmedText = ""
             Task {
                 do {
                     try await manager.startDictation()

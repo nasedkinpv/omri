@@ -17,14 +17,7 @@ struct SplashView: View {
     var body: some View {
         ZStack {
             // Background gradient
-            LinearGradient(
-                colors: [
-                    Color(red: 0.0, green: 0.48, blue: 1.0),  // Brand blue
-                    Color(red: 0.35, green: 0.78, blue: 0.98)  // Brand teal
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            Color.omriBrandGradient
             .ignoresSafeArea()
 
             VStack(spacing: 20) {

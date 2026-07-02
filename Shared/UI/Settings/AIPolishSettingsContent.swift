@@ -162,7 +162,7 @@ struct AIPolishSettingsContent: View {
 
                                 HStack {
                                     Image(systemName: "info.circle.fill")
-                                        .foregroundColor(Color("BrandBlue"))
+                                        .foregroundColor(Color("BrandPrimary"))
                                         .font(.caption)
                                     Text("Use {transcribed_text} as a placeholder for the dictated content")
                                         .font(.caption)
@@ -171,7 +171,7 @@ struct AIPolishSettingsContent: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(Color("BrandBlue").opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                                .background(Color("BrandPrimary").opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
                             }
 
                             TextEditor(text: $settings.transformationPrompt)
@@ -208,7 +208,7 @@ struct AIPolishSettingsContent: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .font(.caption)
-                                .foregroundColor(Color("BrandBlue"))
+                                .foregroundColor(Color("BrandPrimary"))
                             }
                         }
                     }
@@ -329,7 +329,7 @@ struct AIPolishSettingsContent: View {
 
                             HStack {
                                 Image(systemName: "info.circle.fill")
-                                    .foregroundColor(Color("BrandBlue"))
+                                    .foregroundColor(Color("BrandPrimary"))
                                     .font(.caption)
                                 Text("Use {transcribed_text} as a placeholder for the dictated content")
                                     .font(.caption)
@@ -338,7 +338,7 @@ struct AIPolishSettingsContent: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color("BrandBlue").opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                            .background(Color("BrandPrimary").opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
                         }
 
                         TextEditor(text: $settings.transformationPrompt)
@@ -375,7 +375,7 @@ struct AIPolishSettingsContent: View {
                             }
                             .buttonStyle(.borderless)
                             .font(.caption)
-                            .foregroundColor(Color("BrandBlue"))
+                            .foregroundColor(Color("BrandPrimary"))
                         }
                     }
                 }

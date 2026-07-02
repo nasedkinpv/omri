@@ -99,13 +99,13 @@ struct SettingsView: View {
         }()
 
         if micStatus && accessibilityStatus {
-            return "✅ All permissions granted. Omri is ready to use!"
+            return "All permissions granted. Omri is ready to use."
         } else {
             return """
             Omri requires additional system access:
 
-            🎤 Microphone Access: \(micStatus ? "✅ Granted" : "❌ Required")
-            ⚡ Accessibility Access: \(accessibilityStatus ? "✅ Granted" : "❌ Required")
+            Microphone: \(micStatus ? "Granted" : "Required")
+            Accessibility: \(accessibilityStatus ? "Granted" : "Required")
 
             These permissions enable voice recording and seamless text insertion.
             """

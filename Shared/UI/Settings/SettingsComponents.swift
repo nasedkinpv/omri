@@ -28,7 +28,6 @@ struct OmriIcon: View {
 
     enum IconStyle {
         case brand          // Uses brand gradient
-        case premium        // Uses premium gradient
         case monochrome     // Uses single color
         case system         // Uses system colors
     }
@@ -44,10 +43,8 @@ struct OmriIcon: View {
         switch style {
         case .brand:
             AnyShapeStyle(Color.omriBrandGradient)
-        case .premium:
-            AnyShapeStyle(Color.omriPremiumGradient)
         case .monochrome:
-            AnyShapeStyle(Color("BrandBlue"))
+            AnyShapeStyle(Color("BrandPrimary"))
         case .system:
             AnyShapeStyle(Color.primary)
         }
@@ -81,10 +78,10 @@ struct OmriStatusIndicator: View {
 
     private var statusColor: Color {
         switch state {
-        case .connected: return Color("BrandMint")
-        case .connecting: return Color("BrandTeal")
-        case .disconnected: return .brandGray600
-        case .error: return Color("BrandOrange")
+        case .connected: return Color("BrandSecondary")
+        case .connecting: return .secondary
+        case .disconnected: return .secondary
+        case .error: return Color("BrandError")
         }
     }
 
@@ -221,7 +218,7 @@ struct SystemPermissionStatusView: View {
         VStack(alignment: .trailing, spacing: 4) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(microphoneGranted ? Color("BrandMint") : Color("BrandOrange"))
+                    .fill(microphoneGranted ? Color("BrandSecondary") : Color("BrandError"))
                     .frame(width: circleSize, height: circleSize)
                 Text("Microphone")
                     .font(.caption)
@@ -230,7 +227,7 @@ struct SystemPermissionStatusView: View {
 
             HStack(spacing: 8) {
                 Circle()
-                    .fill(accessibilityGranted ? Color("BrandMint") : Color("BrandOrange"))
+                    .fill(accessibilityGranted ? Color("BrandSecondary") : Color("BrandError"))
                     .frame(width: circleSize, height: circleSize)
                 Text("Accessibility")
                     .font(.caption)
@@ -264,7 +261,7 @@ struct SystemPermissionStatusView: View {
         VStack(alignment: .trailing, spacing: 4) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(microphoneGranted ? Color("BrandMint") : Color("BrandOrange"))
+                    .fill(microphoneGranted ? Color("BrandSecondary") : Color("BrandError"))
                     .frame(width: circleSize, height: circleSize)
                 Text("Microphone")
                     .font(.caption)

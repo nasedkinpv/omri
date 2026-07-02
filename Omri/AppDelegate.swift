@@ -37,12 +37,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Status bar icon: a single Omri glyph, tinted by state.
     private let defaultIcon = "SVG Icon"
 
-    // Brand colors for status-bar state tinting.
-    private let brandBlue = NSColor(red: 0/255, green: 122/255, blue: 255/255, alpha: 1.0)
-    private let brandTeal = NSColor(red: 90/255, green: 200/255, blue: 250/255, alpha: 1.0)
-    private let brandPurple = NSColor(red: 175/255, green: 82/255, blue: 222/255, alpha: 1.0)
-    private let brandOrange = NSColor(red: 255/255, green: 149/255, blue: 0/255, alpha: 1.0)
-    private let brandMint = NSColor(red: 0/255, green: 212/255, blue: 170/255, alpha: 1.0)
+    // Brand colors for status-bar state tinting (asset catalog tokens).
+    private let brandPrimary = NSColor(named: "BrandPrimary") ?? .controlAccentColor
+    private let brandSecondary = NSColor(named: "BrandSecondary") ?? .controlAccentColor
+    private let brandError = NSColor(named: "BrandError") ?? .systemRed
 
     // Helper function to create properly sized menu bar icons
     private func createMenuBarIcon(named iconName: String) -> NSImage? {
@@ -303,8 +301,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.informativeText = """
                 Omri requires the following permissions:
 
-                Microphone: \(micStatus ? "✅ Granted" : "❌ Missing")
-                Accessibility: \(accessibilityStatus ? "✅ Granted" : "❌ Missing")
+                Microphone: \(micStatus ? "Granted" : "Missing")
+                Accessibility: \(accessibilityStatus ? "Granted" : "Missing")
 
                 Please grant the missing permissions in System Settings.
                 """
@@ -383,8 +381,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: AudioManagerDelegate {
     // Since AppDelegate is @MainActor, these methods are already on the main actor.
     func audioManagerDidStartRecording() {
-        // Recording state: brand blue glyph.
-        self.statusItem.button?.image = tintedStatusIcon(color: brandBlue)
+        // Recording state: primary glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandPrimary)
     }
 
     func audioManagerDidStopRecording() {
@@ -393,8 +391,8 @@ extension AppDelegate: AudioManagerDelegate {
     }
 
     func audioManagerWillStartNetworkProcessing() {
-        // Processing state: brand teal glyph.
-        self.statusItem.button?.image = tintedStatusIcon(color: brandTeal)
+        // Processing state: secondary glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandSecondary)
     }
 
     func audioManager(didReceiveError error: Error) {
@@ -458,8 +456,8 @@ extension AppDelegate: AudioManagerDelegate {
             }
         }
 
-        // Briefly tint the status bar glyph orange to indicate error, then revert
-        self.statusItem.button?.image = tintedStatusIcon(color: brandOrange)
+        // Briefly tint the status bar glyph red to indicate error, then revert
+        self.statusItem.button?.image = tintedStatusIcon(color: brandError)
 
         // Revert to normal icon after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -477,13 +475,13 @@ extension AppDelegate: PasteManagerDelegate {
     }
 
     func pasteManagerWillStartTransformation() {
-        // AI transformation state: brand purple glyph.
-        self.statusItem.button?.image = tintedStatusIcon(color: brandPurple)
+        // AI transformation state: secondary glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandSecondary)
     }
 
     func pasteManagerDidFinishProcessing() {
-        // Success state: brand mint glyph (briefly), then back to idle.
-        self.statusItem.button?.image = tintedStatusIcon(color: brandMint)
+        // Success state: secondary glyph (briefly), then back to idle.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandSecondary)
 
         // Reset to normal template icon after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {

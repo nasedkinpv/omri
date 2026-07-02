@@ -99,7 +99,7 @@ struct AboutSettingsContent: View {
                             }
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(Color("BrandBlue"))
+                            .foregroundColor(Color("BrandPrimary"))
                             .buttonStyle(.plain)
                             #if os(macOS)
                             .onHover { hovering in
@@ -123,7 +123,7 @@ struct AboutSettingsContent: View {
                     VStack(spacing: 16) {
                         FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .brand)
                         FeatureRow(icon: "globe.americas.fill", title: "Translation", description: "Translate speech from any language to English", style: .monochrome)
-                        FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .premium)
+                        FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .brand)
                         FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any Mac application", style: .system)
                     }
                 }
@@ -194,7 +194,7 @@ struct AboutSettingsContent: View {
                             }
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(Color("BrandBlue"))
+                            .foregroundColor(Color("BrandPrimary"))
                             .buttonStyle(.plain)
                         }
                     }
@@ -205,7 +205,7 @@ struct AboutSettingsContent: View {
             Section("Features") {
                 FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .brand)
                 FeatureRow(icon: "globe.americas.fill", title: "Translation", description: "Translate speech from any language to English", style: .monochrome)
-                FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .premium)
+                FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .brand)
                 FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any iOS application", style: .system)
             }
 
@@ -239,7 +239,7 @@ struct AboutSettingsContent: View {
             }
             .font(.caption)
             .fontWeight(.medium)
-            .foregroundColor(Color("BrandBlue"))
+            .foregroundColor(Color("BrandPrimary"))
             .buttonStyle(.plain)
         }
     }
