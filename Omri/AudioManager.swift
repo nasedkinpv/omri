@@ -29,9 +29,6 @@ class AudioManager {
     nonisolated(unsafe) private var recordingFormat: AVAudioFormat?  // Accessed from audio thread for conversion
     private var monitor: Any?
 
-    // Session accumulation for streaming mode
-    private var accumulatedSessionText: String = ""
-
     // Apple SpeechAnalyzer Integration (macOS 26.0+)
     // Protocol-based approach eliminates type erasure while maintaining availability checking
     private var appleSpeechAnalyzer: (any OnDeviceTranscriptionManager)?
@@ -137,9 +134,6 @@ class AudioManager {
         audioBuffers.removeAll(keepingCapacity: true)
         audioBuffers.reserveCapacity(expectedBufferCount)
         audioConverter = nil  // Reset converter for new session
-
-        // Clear accumulated session text
-        accumulatedSessionText = ""
 
         // Cache settings for audio thread access
         cachedIsOnDevice = provider.isOnDevice
@@ -418,22 +412,11 @@ class AudioManager {
 
     @available(macOS 14.0, *)
     private func stopParakeetSession() {
-        // Stop Parakeet session and process audio
-        // Keep manager instance alive for reuse
+        // Stop the session; final text arrives via didReceiveFinalTranscription.
+        // Keep manager instance alive for reuse.
         if let manager = parakeetManager as? ParakeetTranscriptionManager {
-            let isStreaming = manager.isInStreamingMode
-            let shouldApplyAI = wasShiftPressedOnStart && Settings.shared.enableAIProcessing
-
             Task { @MainActor in
-                // For streaming mode, stopSession returns final text
-                // For batch mode, final transcription is handled by delegate
                 _ = await manager.stopSession()
-
-                // For streaming mode, handle AI processing of accumulated text
-                if isStreaming && shouldApplyAI && !accumulatedSessionText.isEmpty {
-                    Logger.log("Applying AI polish to streaming session text", context: "Nemotron", level: .info)
-                    await pasteManager.processAndPasteText(accumulatedSessionText, withAI: true)
-                }
             }
         }
 
@@ -625,45 +608,17 @@ extension AudioManager: AppleSpeechAnalyzerDelegate {
 @available(macOS 14.0, *)
 extension AudioManager: ParakeetTranscriptionDelegate {
 
-    // MARK: - Batch Mode Callbacks
-
-    func parakeet(didReceivePartialTranscription text: String) async {
-        Logger.log("Partial transcription - '\(text)'", context: "Nemotron", level: .debug)
-
-        // For batch mode: Stream partial results without AI
-        // Note: Streaming mode uses volatile/confirmed callbacks instead
-        await self.pasteManager.appendStreamingText(text, withAI: false)
-    }
-
     func parakeet(didReceiveFinalTranscription text: String) async {
         Logger.log("Final transcription - '\(text)'", context: "Nemotron", level: .info)
 
-        // Process with AI if enabled (applies to both batch and streaming final result)
         let shouldApplyAI = wasShiftPressedOnStart && Settings.shared.enableAIProcessing
         await self.pasteManager.processAndPasteText(text, withAI: shouldApplyAI)
     }
 
-    // MARK: - Streaming Mode Callbacks (Real-time transcription via FluidAudio StreamingAsrManager)
-
     func parakeet(didReceiveVolatileTranscription text: String) async {
-        // Volatile text is in-progress and may change
-        // Show it immediately for real-time feedback, but don't accumulate
+        // Volatile text is in-progress and may change; final text arrives via didReceiveFinalTranscription
         Logger.log("Volatile: '\(text)'", context: "Nemotron", level: .debug)
-
-        // Update the display with volatile text (will be replaced by confirmed text)
         await self.pasteManager.updateVolatileText(text)
-    }
-
-    func parakeet(didReceiveConfirmedTranscription text: String) async {
-        // Confirmed text is stable and won't change
-        // Append to accumulated session text and show to user
-        Logger.log("Confirmed: '\(text)'", context: "Nemotron", level: .info)
-
-        // Accumulate confirmed text for final AI processing
-        accumulatedSessionText += (accumulatedSessionText.isEmpty ? "" : " ") + text
-
-        // Show confirmed text to user
-        await self.pasteManager.appendStreamingText(text, withAI: false)
     }
 
     func parakeetWillDownloadModels() async {

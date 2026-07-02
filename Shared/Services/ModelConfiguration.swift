@@ -20,24 +20,9 @@ enum ModelType {
     case transformation
 }
 
-// MARK: - Model Configuration Protocol
+// MARK: - Model Configuration
 
-protocol ModelConfigurable {
-    var modelType: ModelType { get }
-    var supportsTemperature: Bool { get }
-    var supportsReasoning: Bool { get }
-    var supportsLanguage: Bool { get }
-    var supportsPrompt: Bool { get }
-    var supportsTimestamps: Bool { get }
-    var defaultTemperature: Double? { get }
-    var defaultResponseFormat: String { get }
-    var maxTokens: Int? { get }  // Optional for transcription models
-    var additionalParameters: [String: Any] { get }
-}
-
-// MARK: - Model Configuration Implementation
-
-struct ModelConfiguration: ModelConfigurable {
+struct ModelConfiguration {
     let modelType: ModelType
     let supportsTemperature: Bool
     let supportsReasoning: Bool

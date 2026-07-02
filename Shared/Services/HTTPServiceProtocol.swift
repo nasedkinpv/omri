@@ -5,17 +5,10 @@
 //  Created by beneric.studio
 //  Copyright © 2025 beneric.studio. All rights reserved.
 //
-//  Protocol-based HTTP service layer for modern Swift networking
+//  Shared HTTP types for the service layer (see BaseHTTPService)
 //
 
 import Foundation
-
-// MARK: - HTTP Service Protocol
-
-protocol HTTPService {
-    var apiKey: String { get }
-    var endpoint: String { get }
-}
 
 // MARK: - Content Type
 

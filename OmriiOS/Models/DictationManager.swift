@@ -23,9 +23,8 @@ class DictationManager {
     var onTranscriptionComplete: ((String) -> Void)?
     var onModelLoading: ((Bool) -> Void)?  // true = loading, false = done
 
-    // Streaming mode callbacks (Nemotron real-time transcription)
+    // Streaming callback (Nemotron real-time transcription); final text via onTranscriptionComplete
     var onVolatileText: ((String) -> Void)?
-    var onConfirmedText: ((String) -> Void)?
 
     private let audioRecorder = AudioRecorder()
     private var transcriptionService: TranscriptionService?
@@ -174,20 +173,10 @@ class DictationManager {
 // MARK: - Nemotron Transcription Delegate
 
 extension DictationManager: ParakeetTranscriptionDelegate {
-    func parakeet(didReceivePartialTranscription text: String) async {
-        // Batch mode partial transcriptions (not used in streaming)
-        Logger.log("Nemotron partial - '\(text)'", context: "Dictation", level: .debug)
-    }
-
     func parakeet(didReceiveVolatileTranscription text: String) async {
         // Streaming mode: in-progress text that may change
         Logger.log("Nemotron volatile - '\(text)'", context: "Dictation", level: .debug)
         onVolatileText?(text)
-    }
-
-    func parakeet(didReceiveConfirmedTranscription text: String) async {
-        Logger.log("Nemotron confirmed - '\(text)'", context: "Dictation", level: .info)
-        onConfirmedText?(text)
     }
 
     func parakeet(didReceiveFinalTranscription text: String) async {

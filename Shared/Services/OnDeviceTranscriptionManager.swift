@@ -36,8 +36,6 @@ protocol OnDeviceTranscriptionManager: AnyObject {
 
 /// Extension to provide default implementation for optional methods
 extension OnDeviceTranscriptionManager {
-    var isInitialized: Bool { true }
-
     /// Default implementation of startSession without locale parameter
     /// Calls the locale-based version with .current
     func startSession() async throws -> AVAudioFormat {

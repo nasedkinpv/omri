@@ -5,25 +5,23 @@
 //  Created by beneric.studio
 //  Copyright © 2025 beneric.studio. All rights reserved.
 //
-//  Single source of truth for app version information (shared between iOS and macOS)
+//  App version read from the bundle (MARKETING_VERSION / CURRENT_PROJECT_VERSION
+//  in the project are the single source of truth)
 //
 
 import Foundation
 
-struct AppVersion {
-    /// Semantic version (major.minor.patch)
-    static let marketing = "1.7.0"
+enum AppVersion {
+    static var marketing: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+    }
 
-    /// Build identifier (year.month or build number)
-    static let build = "2026.07"
+    static var build: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+    }
 
     /// Display string for UI
     static var display: String {
-        "Version \(marketing) • Build \(build)"
-    }
-
-    /// Git tag format
-    static var tag: String {
-        "v\(marketing)"
+        "Version \(marketing) (\(build))"
     }
 }

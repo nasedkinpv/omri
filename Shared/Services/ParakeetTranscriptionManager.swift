@@ -23,7 +23,6 @@ final class ParakeetTranscriptionManager: OnDeviceTranscriptionManager {
     weak var delegate: ParakeetTranscriptionDelegate?
 
     var isInitialized: Bool { manager != nil }
-    var isInStreamingMode: Bool { isActive }
 
     func initializeModels() async throws {
         guard manager == nil else { return }
@@ -46,18 +45,6 @@ final class ParakeetTranscriptionManager: OnDeviceTranscriptionManager {
 
         Logger.log("Nemotron models ready", context: "Nemotron", level: .info)
         await delegate?.parakeetDidDownloadModels()
-    }
-
-    func areModelsDownloaded() async -> Bool {
-        do {
-            _ = try await StreamingNemotronMultilingualAsrManager.downloadVariant(
-                languageCode: Settings.shared.onDeviceLanguage,
-                chunkMs: chunkMs
-            )
-            return true
-        } catch {
-            return false
-        }
     }
 
     func startSession(locale: Locale = .current) async throws -> AVAudioFormat {
@@ -84,10 +71,6 @@ final class ParakeetTranscriptionManager: OnDeviceTranscriptionManager {
         isActive = true
         Logger.log("Nemotron session started", context: "Nemotron", level: .info)
         return format
-    }
-
-    func startStreamingSession(locale: Locale = .current) async throws -> AVAudioFormat {
-        try await startSession(locale: locale)
     }
 
     func feedAudio(_ buffer: AVAudioPCMBuffer) {
@@ -139,9 +122,7 @@ final class ParakeetTranscriptionManager: OnDeviceTranscriptionManager {
 
 @MainActor
 protocol ParakeetTranscriptionDelegate: AnyObject {
-    func parakeet(didReceivePartialTranscription text: String) async
     func parakeet(didReceiveVolatileTranscription text: String) async
-    func parakeet(didReceiveConfirmedTranscription text: String) async
     func parakeet(didReceiveFinalTranscription text: String) async
     func parakeetWillDownloadModels() async
     func parakeetDidDownloadModels() async

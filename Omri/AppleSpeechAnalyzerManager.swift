@@ -27,6 +27,9 @@ class AppleSpeechAnalyzerManager: OnDeviceTranscriptionManager {
 
     weak var delegate: AppleSpeechAnalyzerDelegate?
 
+    // Apple downloads its language model lazily inside startSession; always ready to start
+    var isInitialized: Bool { true }
+
     private var isActive = false
     private var isFinishing = false  // Track when audio input is finishing
 

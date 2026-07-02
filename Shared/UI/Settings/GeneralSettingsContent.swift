@@ -133,167 +133,73 @@ struct GeneralSettingsContent: View {
 
     @ViewBuilder
     private var onDeviceModelsSection: some View {
-        #if os(macOS) && canImport(FluidAudio)
-        if #available(macOS 14.0, *) {
+        if #available(macOS 14.0, iOS 17.0, *) {
             let manager = ModelDownloadManager.shared
 
-            VStack(alignment: .leading, spacing: 16) {
-                ForEach(manager.availableModels, id: \.id) { model in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top, spacing: 20) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(model.displayName)
-                                    .font(.headline)
-                                Text(model.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(model.estimatedSize)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(manager.displayName)
+                            .font(.headline)
+                        Text(manager.modelDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(manager.estimatedSize)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
 
-                            Spacer()
+                    Spacer()
 
-                            HStack(spacing: 12) {
-                                // Status indicator
-                                OmriStatusIndicator(
-                                    state: modelStatusToConnectionState(manager.state(for: model.id)),
-                                    service: .transcription
-                                )
-
-                                // Action button
-                                modelActionButton(for: model, state: manager.state(for: model.id), manager: manager)
-                            }
-                        }
-
-                        // Progress indicator when downloading
-                        if case .downloading = manager.state(for: model.id) {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Downloading model files (~600 MB)...")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-
-                        // Error message
-                        if case .error(let message) = manager.state(for: model.id) {
-                            Text(message)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                        }
+                    HStack(spacing: 12) {
+                        OmriStatusIndicator(
+                            state: modelStatusToConnectionState(manager.state),
+                            service: .transcription
+                        )
+                        modelActionButton(state: manager.state, manager: manager)
                     }
                 }
 
-                // Clear all models button
-                if manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloaded }) {
+                if case .downloading = manager.state {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Downloading model files (~600 MB)...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if case .error(let message) = manager.state {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+
+                if manager.state == .downloaded {
                     HStack {
                         Spacer()
-                        Button("Clear All Models...") {
+                        Button("Clear Model...") {
                             showingClearModelsAlert = true
                         }
                         .buttonStyle(.borderless)
                         .foregroundColor(.red)
-                        .disabled(manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloading }))
                     }
                 }
             }
             .onAppear {
-                Task {
-                    await manager.checkAllModelsStatus()
-                }
-            }
-        } else {
-            Text("On-device models require macOS 14.0+")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        #elseif canImport(FluidAudio)
-        if #available(iOS 17.0, *) {
-            let manager = ModelDownloadManager.shared
-
-            VStack(spacing: 16) {
-                ForEach(manager.availableModels, id: \.id) { model in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(model.displayName)
-                                    .font(.headline)
-                                    .fontWeight(.medium)
-                                Text(model.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(model.estimatedSize)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Spacer()
-
-                            HStack(spacing: 12) {
-                                OmriStatusIndicator(
-                                    state: modelStatusToConnectionState(manager.state(for: model.id)),
-                                    service: .transcription
-                                )
-
-                                modelActionButton(for: model, state: manager.state(for: model.id), manager: manager)
-                            }
-                        }
-
-                        // Progress indicator when downloading
-                        if case .downloading = manager.state(for: model.id) {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Downloading model files (~600 MB)...")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-
-                        // Error message
-                        if case .error(let message) = manager.state(for: model.id) {
-                            Text(message)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                        }
-                    }
-                }
-
-                // Clear all models button
-                if manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloaded }) {
-                    HStack {
-                        Spacer()
-                        Button("Clear All Models...") {
-                            showingClearModelsAlert = true
-                        }
-                        .foregroundColor(.red)
-                        .disabled(manager.availableModels.contains(where: { manager.state(for: $0.id) == .downloading }))
-                    }
-                }
-            }
-            .onAppear {
-                Task {
-                    await manager.checkAllModelsStatus()
-                }
+                manager.checkStatus()
             }
         }
-        #else
-        Text("On-device models not available on this platform")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        #endif
     }
 
+    @available(macOS 14.0, iOS 17.0, *)
     @ViewBuilder
-    private func modelActionButton(for model: any DownloadableModel, state: ModelDownloadState, manager: ModelDownloadManager) -> some View {
+    private func modelActionButton(state: ModelDownloadState, manager: ModelDownloadManager) -> some View {
         switch state {
         case .notDownloaded:
             Button("Download") {
-                Task {
-                    await manager.downloadModel(model.id)
-                }
+                Task { await manager.download() }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
@@ -313,9 +219,8 @@ struct GeneralSettingsContent: View {
         case .error:
             Button("Clear & Retry") {
                 Task {
-                    // Clear partial/corrupted downloads before retrying
-                    manager.clearModel(model.id)
-                    await manager.downloadModel(model.id)
+                    manager.clear()
+                    await manager.download()
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -323,16 +228,13 @@ struct GeneralSettingsContent: View {
         }
     }
 
+    @available(macOS 14.0, iOS 17.0, *)
     private func modelStatusToConnectionState(_ state: ModelDownloadState) -> OmriStatusIndicator.ConnectionState {
         switch state {
-        case .notDownloaded:
-            return .disconnected
-        case .downloading:
-            return .connecting
-        case .downloaded:
-            return .connected
-        case .error:
-            return .error
+        case .notDownloaded: return .disconnected
+        case .downloading: return .connecting
+        case .downloaded: return .connected
+        case .error: return .error
         }
     }
 
@@ -363,12 +265,8 @@ struct GeneralSettingsContent: View {
         Logger.log("Model cache cleared successfully", context: "Settings", level: .info)
 
         // Refresh model download manager state
-        #if canImport(FluidAudio)
         if #available(macOS 14.0, iOS 17.0, *) {
-            Task {
-                await ModelDownloadManager.shared.checkAllModelsStatus()
-            }
+            ModelDownloadManager.shared.checkStatus()
         }
-        #endif
     }
 }

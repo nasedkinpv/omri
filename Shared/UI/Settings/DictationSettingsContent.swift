@@ -440,8 +440,8 @@ struct DictationSettingsContent: View {
         isCheckingModel = true
 
         let manager = ModelDownloadManager.shared
-        await manager.checkModelStatus("nemotron-multilingual")
-        parakeetState = manager.state(for: "nemotron-multilingual")
+        manager.checkStatus()
+        parakeetState = manager.state
 
         isCheckingModel = false
     }
@@ -452,14 +452,13 @@ struct DictationSettingsContent: View {
         parakeetState = .downloading
 
         let manager = ModelDownloadManager.shared
-        await manager.downloadModel("nemotron-multilingual")
-        parakeetState = manager.state(for: "nemotron-multilingual")
+        await manager.download()
+        parakeetState = manager.state
     }
 
     @available(macOS 14.0, iOS 17.0, *)
     private func clearParakeetModel() {
-        let manager = ModelDownloadManager.shared
-        manager.clearModel("nemotron-multilingual")
+        ModelDownloadManager.shared.clear()
         parakeetState = .notDownloaded
     }
 

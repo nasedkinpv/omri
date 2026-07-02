@@ -10,7 +10,7 @@
 
 import Foundation
 
-class BaseHTTPService: HTTPService {
+class BaseHTTPService {
     let apiKey: String
     let endpoint: String
 
