@@ -1,0 +1,61 @@
+{
+  "features" : [
+    "refractivity",
+    "specular-location"
+  ],
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.41690,0.49073,0.80722,1.00000",
+      "display-p3:0.20224,0.15112,0.62964,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blend-mode" : "normal",
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "fill" : {
+            "linear-gradient" : [
+              "display-p3:0.92050,0.33929,0.75660,1.00000",
+              "display-p3:0.92050,0.28288,0.19730,1.00000"
+            ]
+          },
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "omri.svg",
+          "name" : "omri",
+          "position" : {
+            "scale" : 2.71,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "lighting" : "combined",
+      "refractivity" : {
+        "depth" : 0.116015625,
+        "enabled" : true,
+        "strength" : 0.5996484375
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 1.36
+      },
+      "specular" : "outside",
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

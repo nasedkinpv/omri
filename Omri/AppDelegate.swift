@@ -34,11 +34,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return audioManager
     }
 
-    // Status bar icons
+    // Status bar icon: a single Omri glyph, tinted by state.
     private let defaultIcon = "SVG Icon"
-    private let recordingIcon = "person.wave.2.fill"  // Person speaking (distinct from system mic icon)
-    private let processingIcon = "hourglass"  // Processing/transcription state
-    private let transformationIcon = "brain.head.profile"  // AI transformation state
+
+    // Brand colors for status-bar state tinting.
+    private let brandBlue = NSColor(red: 0/255, green: 122/255, blue: 255/255, alpha: 1.0)
+    private let brandTeal = NSColor(red: 90/255, green: 200/255, blue: 250/255, alpha: 1.0)
+    private let brandPurple = NSColor(red: 175/255, green: 82/255, blue: 222/255, alpha: 1.0)
+    private let brandOrange = NSColor(red: 255/255, green: 149/255, blue: 0/255, alpha: 1.0)
+    private let brandMint = NSColor(red: 0/255, green: 212/255, blue: 170/255, alpha: 1.0)
 
     // Helper function to create properly sized menu bar icons
     private func createMenuBarIcon(named iconName: String) -> NSImage? {
@@ -48,6 +52,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return image
         }
         return nil
+    }
+
+    // The Omri glyph tinted with a state color (non-template, so the tint shows).
+    private func tintedStatusIcon(color: NSColor) -> NSImage? {
+        createTintedImage(from: createMenuBarIcon(named: defaultIcon), color: color)
     }
 
     static func main() {
@@ -374,12 +383,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: AudioManagerDelegate {
     // Since AppDelegate is @MainActor, these methods are already on the main actor.
     func audioManagerDidStartRecording() {
-        // Use person speaking icon to avoid duplicating macOS system microphone indicator
-        // macOS automatically shows orange microphone indicator in Control Center when recording
-        let image = NSImage(systemSymbolName: recordingIcon, accessibilityDescription: "Dictating")
-        image?.isTemplate = false
-        let tintedImage = createTintedImage(from: image, color: NSColor(red: 0/255, green: 122/255, blue: 255/255, alpha: 1.0)) // brandBlue
-        self.statusItem.button?.image = tintedImage
+        // Recording state: brand blue glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandBlue)
     }
 
     func audioManagerDidStopRecording() {
@@ -388,12 +393,8 @@ extension AppDelegate: AudioManagerDelegate {
     }
 
     func audioManagerWillStartNetworkProcessing() {
-        Logger.log("audioManagerWillStartNetworkProcessing - Setting icon to \(processingIcon)", context: "App", level: .debug)
-        // Set processing icon with brand color
-        let image = NSImage(systemSymbolName: processingIcon, accessibilityDescription: "Processing")
-        image?.isTemplate = false
-        let tintedImage = createTintedImage(from: image, color: NSColor(red: 90/255, green: 200/255, blue: 250/255, alpha: 1.0)) // brandTeal
-        self.statusItem.button?.image = tintedImage
+        // Processing state: brand teal glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandTeal)
     }
 
     func audioManager(didReceiveError error: Error) {
@@ -457,11 +458,8 @@ extension AppDelegate: AudioManagerDelegate {
             }
         }
 
-        // Also briefly change status bar icon to indicate error, then revert
-        let errorImage = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Error")
-        errorImage?.isTemplate = false
-        let tintedErrorImage = createTintedImage(from: errorImage, color: NSColor(red: 255/255, green: 149/255, blue: 0/255, alpha: 1.0)) // brandOrange for warning
-        self.statusItem.button?.image = tintedErrorImage
+        // Briefly tint the status bar glyph orange to indicate error, then revert
+        self.statusItem.button?.image = tintedStatusIcon(color: brandOrange)
 
         // Revert to normal icon after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -479,21 +477,13 @@ extension AppDelegate: PasteManagerDelegate {
     }
 
     func pasteManagerWillStartTransformation() {
-        Logger.log("pasteManagerWillStartTransformation - Setting icon to \(transformationIcon)", context: "App", level: .debug)
-        // Set transformation icon with brand purple for AI processing
-        let image = NSImage(systemSymbolName: transformationIcon, accessibilityDescription: "AI Processing")
-        image?.isTemplate = false
-        let tintedImage = createTintedImage(from: image, color: NSColor(red: 175/255, green: 82/255, blue: 222/255, alpha: 1.0)) // brandPurple
-        self.statusItem.button?.image = tintedImage
+        // AI transformation state: brand purple glyph.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandPurple)
     }
 
     func pasteManagerDidFinishProcessing() {
-        Logger.log("pasteManagerDidFinishProcessing - Setting icon to \(defaultIcon)", context: "App", level: .debug)
-        // Set back to default icon with success color
-        let image = createMenuBarIcon(named: defaultIcon)
-        image?.isTemplate = false
-        let tintedImage = createTintedImage(from: image, color: NSColor(red: 0/255, green: 212/255, blue: 170/255, alpha: 1.0)) // brandMint for success
-        self.statusItem.button?.image = tintedImage
+        // Success state: brand mint glyph (briefly), then back to idle.
+        self.statusItem.button?.image = tintedStatusIcon(color: brandMint)
 
         // Reset to normal template icon after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
