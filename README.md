@@ -8,6 +8,20 @@
 
 Native voice transcription for macOS and iOS. Use private on-device transcription with Nemotron or Apple SpeechAnalyzer, or bring your own Groq/OpenAI API key.
 
+## Screenshots
+
+<div align="center">
+  <img src="screenshots/omri-settings.gif" alt="Omri settings tour" width="380">
+
+  *Settings — Dictation · AI Polish · General · About*
+
+  <br>
+
+  <img src="screenshots/omri-menu.png" alt="Omri menu bar" width="260">
+
+  *Menu bar*
+</div>
+
 ## Features
 
 ### macOS
@@ -91,5 +105,7 @@ xcodebuild -project Omri.xcodeproj -scheme OmriiOS -sdk iphonesimulator build
 ## License
 
 MIT License — see [LICENSE](LICENSE).
+
+On-device transcription uses the [NVIDIA Nemotron 3.5 ASR model](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b), Copyright © NVIDIA Corporation, licensed under [OpenMDW-1.1](https://openmdw.ai/license/1-1/). CoreML conversion and runtime by [FluidAudio](https://github.com/FluidInference/FluidAudio) (Apache-2.0).
 
 Created by [Ben Nasedkin](https://github.com/nasedkinpv).
