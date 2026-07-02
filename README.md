@@ -1,192 +1,94 @@
 <div align="center">
   <img src="brand-icon.png" alt="Omri Logo" width="120" height="120">
 
-  # Omri
+# Omri
 
   **עמרי | om-REE** — harvesting voice into text
 </div>
 
-A native macOS and iOS app for voice transcription. Choose from 100% private on-device transcription (macOS/iOS 17+ with Nemotron, macOS 26+ with Apple), your own Groq/OpenAI API keys, or local AI models. Includes SSH terminal with voice dictation on both platforms.
-
-## Architecture
-
-```mermaid
-flowchart TB
-    subgraph Input["Voice Input"]
-        FN["fn key (macOS)"]
-        TAP["Tap Button (iOS)"]
-    end
-
-    subgraph Audio["Audio Layer"]
-        AM["AudioManager (macOS)"]
-        AR["AudioRecorder (Shared)"]
-    end
-
-    subgraph Transcription["Transcription Providers"]
-        direction LR
-        NEMOTRON["Nemotron 3.5 ASR\n(On-Device)"]
-        APPLE["Apple SpeechAnalyzer\n(On-Device)"]
-        GROQ["Groq API"]
-        OPENAI["OpenAI API"]
-        CUSTOM["Custom API"]
-    end
-
-    subgraph Transform["AI Enhancement"]
-        TS["TransformationService"]
-    end
-
-    subgraph Output["Text Delivery"]
-        PM["PasteManager"]
-        TERM["Terminal"]
-        CLIP["Clipboard"]
-    end
-
-    FN --> AM
-    TAP --> AR
-    AM --> NEMOTRON
-    AM --> APPLE
-    AM --> GROQ
-    AM --> OPENAI
-    AR --> NEMOTRON
-    AR --> GROQ
-    AR --> OPENAI
-    AR --> CUSTOM
-
-    NEMOTRON --> PM
-    APPLE --> PM
-    GROQ --> PM
-    OPENAI --> PM
-    CUSTOM --> PM
-
-    PM --> TS
-    TS --> PM
-    PM --> TERM
-    PM --> CLIP
-```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
-
-## Screenshots
-
-| Menu Bar | Dictation |
-|:---:|:---:|
-| ![Menu Bar](screenshots/omri_menu.png) | ![Dictation](screenshots/omri-settings-dictation.png) |
-
-| AI Polish | General |
-|:---:|:---:|
-| ![AI Polish](screenshots/omri-settings-ai-polish.png) | ![General](screenshots/omri-settings-general.png) |
-
-| About |
-|:---:|
-| ![About](screenshots/omri-settings-about.png) |
+Native voice transcription for macOS and iOS. Use private on-device transcription with Nemotron or Apple SpeechAnalyzer, or bring your own Groq/OpenAI API key.
 
 ## Features
 
 ### macOS
-- **Hold fn key** → speak → get text anywhere
-- **Hold fn + shift** → AI-enhanced text
-- **100% private on-device transcription** - Nemotron (macOS/iOS 17+, ~40 languages) or Apple (macOS 26+)
-- **Real-time streaming** - Nemotron shows text as you speak
-- **ANE-accelerated** - runs on Apple Neural Engine for optimal performance
-- Works in any macOS app
-- Cloud APIs (Groq/OpenAI) or local AI models (Ollama, LM Studio)
-- Menu bar app, stays out of your way
+
+- Hold `fn` → speak → release to paste text anywhere
+- Hold `fn + shift` to apply AI polish
+- Private on-device transcription with Nemotron 3.5 ASR
+- Apple SpeechAnalyzer support on macOS 26+
+- Cloud transcription with Groq, OpenAI, or a custom OpenAI-compatible endpoint
+- Menu bar app, no telemetry
 
 ### iOS
-- **SSH Terminal** with voice dictation - speak commands directly into terminal
-- **Tap-to-dictate** interface with floating controls
-- **On-device transcription** - Nemotron (iOS 17+) with streaming mode
-- **Real-time preview** - volatile text shows in-progress transcription
-- Cloud transcription (Groq/OpenAI/Custom endpoints)
-- Saved SSH connections with Keychain password storage
-- Powerline/Starship support (Hack Nerd Font built-in)
 
-### SSH Terminal (Both Platforms) — WIP
-- Full SSH terminal emulation via SwiftTerm
-- Voice dictation directly into terminal sessions
-- Connection manager with saved profiles
-- Floating dictation controls with drag positioning (iOS)
-- Clear button: tap for Ctrl+U, long-press for Ctrl+L
+- SSH terminal with voice dictation
+- Floating dictation controls
+- On-device Nemotron transcription with live preview
+- Cloud transcription with Groq, OpenAI, or custom endpoints
+- Saved SSH connections with Keychain password storage
+- Hack Nerd Font included for terminal prompts
 
 ## Quick Start
 
-1. **Choose Your Transcription Provider**
-   - **Nemotron (On-Device)** (macOS/iOS 17+): 100% private, ANE-accelerated, ~40 languages, no API key
-   - **Apple (On-Device)** (macOS 26+): 100% private, native macOS, no API key, works offline
-   - **Cloud**: [Groq](https://console.groq.com/keys) (free tier) or [OpenAI](https://platform.openai.com/api-keys)
-   - **Local AI Enhancement**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
+1. Download the latest release from [Releases](https://github.com/nasedkinpv/omri/releases).
+2. Extract `Omri-vX.X.X-apple-silicon.zip`.
+3. Remove quarantine:
 
-2. **Download & Install**
-
-   **Option A: Download Release (Recommended)**
-   - Go to [Releases](https://github.com/nasedkinpv/omri/releases)
-   - Download latest `Omri-vX.X.X-apple-silicon.zip`
-   - Extract the zip file
-   - Remove quarantine: `xattr -rd com.apple.quarantine Omri.app`
-   - Move `Omri.app` to Applications
-
-   **Option B: Build from Source**
    ```bash
-   git clone https://github.com/nasedkinpv/omri.git
-   cd omri
-   open Omri.xcodeproj
-   # Build and run in Xcode
+   xattr -rd com.apple.quarantine Omri.app
    ```
 
-3. **Setup**
-   - Grant microphone permission
-   - Grant accessibility permission
-   - Configure your AI provider in settings (API key for cloud, base URL for local)
-   - Start dictating!
+4. Move `Omri.app` to Applications.
+5. Launch Omri and grant microphone/accessibility permissions.
+6. Pick a transcription provider in Settings.
 
-## Usage
+## Transcription Providers
 
-- **Basic**: Hold `fn` key → speak → release
-- **AI Enhanced**: Hold `fn + shift` → speak → release
-- Text appears where your cursor is
-
-## Supported Models
-
-**Transcription:**
-- Nemotron (On-Device): `nemotron-3.5-asr-streaming-multilingual-0.6b` (macOS/iOS 17+, ~40 languages, streaming, no API key)
-- Apple (On-Device): Built-in model (macOS 26+, batch mode, no API key)
-- Groq: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (best)
-- OpenAI: `whisper-1`, `nova-1-whisper`
-
-**AI Enhancement:**
-- Groq: `llama-3.3-70b-versatile`
-- OpenAI: `gpt-5`, `gpt-5-mini`
-- Local: Any OpenAI-compatible model (Ollama, LM Studio, etc.)
+- **Nemotron (On-Device)**: private, offline after model download, ~40 languages, no API key
+- **Apple (On-Device)**: private native SpeechAnalyzer on macOS 26+
+- **Groq/OpenAI**: cloud transcription with your own API key
+- **Custom**: OpenAI-compatible transcription endpoint
 
 ## Requirements
 
 ### macOS
-- macOS 14.0+ for Nemotron on-device transcription
-- macOS 26.0+ for Apple on-device transcription
-- macOS 15.0+ for cloud APIs (Groq/OpenAI)
-- Microphone access
-- Accessibility access (for universal pasting)
+
+- macOS 26.0+
+- Apple Silicon recommended for on-device Nemotron
+- Microphone permission
+- Accessibility permission for paste-anywhere support
 
 ### iOS
-- iOS 17.0+ for Nemotron on-device transcription
-- iOS 26.0+ for latest features (Liquid Glass UI)
-- Microphone access
-- On-device (Nemotron) or Cloud API key (Groq/OpenAI)
 
-### General
-- Internet connection (for cloud APIs only, not required for on-device)
+- iOS 26.0+
+- Microphone permission
+- Internet only for cloud APIs or first on-device model download
+
+## Build from Source
+
+```bash
+git clone https://github.com/nasedkinpv/omri.git
+cd omri
+open Omri.xcodeproj
+```
+
+Build schemes:
+
+```bash
+xcodebuild -project Omri.xcodeproj -scheme Omri -configuration Debug build
+xcodebuild -project Omri.xcodeproj -scheme OmriiOS -sdk iphonesimulator build
+```
 
 ## Privacy
 
-- **Nemotron (On-Device)**: 100% private, audio never leaves your device, ANE-accelerated
-- **Apple (On-Device)**: 100% private, audio never leaves your Mac (macOS 26+)
-- **Cloud APIs**: Audio processed via your chosen API (Groq/OpenAI)
-- API keys stored securely in macOS Keychain
-- No telemetry or tracking
-- Audio files deleted immediately after processing
+- On-device audio never leaves your device.
+- Cloud APIs are used only when you select a cloud provider.
+- API keys and SSH passwords are stored in Keychain.
+- No telemetry or tracking.
+- Temporary audio files are deleted after processing.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file.
+MIT License — see [LICENSE](LICENSE).
 
-Created by [beneric.studio](https://github.com/nasedkinpv)
+Created by [Ben Nasedkin](https://github.com/nasedkinpv).
