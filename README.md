@@ -6,7 +6,7 @@
   **עמרי | om-REE** — harvesting voice into text
 </div>
 
-A native macOS and iOS app for voice transcription. Choose from 100% private on-device transcription (macOS 14+ with Parakeet, macOS 26+ with Apple), your own Groq/OpenAI API keys, or local AI models. Includes SSH terminal with voice dictation on both platforms.
+A native macOS and iOS app for voice transcription. Choose from 100% private on-device transcription (macOS/iOS 17+ with Nemotron, macOS 26+ with Apple), your own Groq/OpenAI API keys, or local AI models. Includes SSH terminal with voice dictation on both platforms.
 
 ## Architecture
 
@@ -20,12 +20,11 @@ flowchart TB
     subgraph Audio["Audio Layer"]
         AM["AudioManager (macOS)"]
         AR["AudioRecorder (Shared)"]
-        VAD["VADManager\n(Silero VAD)"]
     end
 
     subgraph Transcription["Transcription Providers"]
         direction LR
-        PARAKEET["Parakeet CoreML\n(On-Device)"]
+        NEMOTRON["Nemotron 3.5 ASR\n(On-Device)"]
         APPLE["Apple SpeechAnalyzer\n(On-Device)"]
         GROQ["Groq API"]
         OPENAI["OpenAI API"]
@@ -44,17 +43,16 @@ flowchart TB
 
     FN --> AM
     TAP --> AR
-    AM --> VAD
-    AM --> PARAKEET
+    AM --> NEMOTRON
     AM --> APPLE
     AM --> GROQ
     AM --> OPENAI
-    AR --> PARAKEET
+    AR --> NEMOTRON
     AR --> GROQ
     AR --> OPENAI
     AR --> CUSTOM
 
-    PARAKEET --> PM
+    NEMOTRON --> PM
     APPLE --> PM
     GROQ --> PM
     OPENAI --> PM
@@ -87,8 +85,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 ### macOS
 - **Hold fn key** → speak → get text anywhere
 - **Hold fn + shift** → AI-enhanced text
-- **100% private on-device transcription** - Parakeet (macOS 14+, 25 languages) or Apple (macOS 26+)
-- **Real-time streaming** - Parakeet streaming mode shows text as you speak (~0.5s latency)
+- **100% private on-device transcription** - Nemotron (macOS/iOS 17+, ~40 languages) or Apple (macOS 26+)
+- **Real-time streaming** - Nemotron shows text as you speak
 - **ANE-accelerated** - runs on Apple Neural Engine for optimal performance
 - Works in any macOS app
 - Cloud APIs (Groq/OpenAI) or local AI models (Ollama, LM Studio)
@@ -97,7 +95,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 ### iOS
 - **SSH Terminal** with voice dictation - speak commands directly into terminal
 - **Tap-to-dictate** interface with floating controls
-- **On-device transcription** - Parakeet (iOS 17+) with streaming mode
+- **On-device transcription** - Nemotron (iOS 17+) with streaming mode
 - **Real-time preview** - volatile text shows in-progress transcription
 - Cloud transcription (Groq/OpenAI/Custom endpoints)
 - Saved SSH connections with Keychain password storage
@@ -113,7 +111,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 ## Quick Start
 
 1. **Choose Your Transcription Provider**
-   - **Parakeet (On-Device)** (macOS 14+): 100% private, ANE-accelerated, 25 European languages, no API key
+   - **Nemotron (On-Device)** (macOS/iOS 17+): 100% private, ANE-accelerated, ~40 languages, no API key
    - **Apple (On-Device)** (macOS 26+): 100% private, native macOS, no API key, works offline
    - **Cloud**: [Groq](https://console.groq.com/keys) (free tier) or [OpenAI](https://platform.openai.com/api-keys)
    - **Local AI Enhancement**: [Ollama](https://ollama.com), LM Studio, or any OpenAI-compatible API
@@ -150,7 +148,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 ## Supported Models
 
 **Transcription:**
-- Parakeet (On-Device): `parakeet-tdt-v3` (macOS 14+, 25 European languages, streaming mode, no API key)
+- Nemotron (On-Device): `nemotron-3.5-asr-streaming-multilingual-0.6b` (macOS/iOS 17+, ~40 languages, streaming, no API key)
 - Apple (On-Device): Built-in model (macOS 26+, batch mode, no API key)
 - Groq: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (best)
 - OpenAI: `whisper-1`, `nova-1-whisper`
@@ -163,24 +161,24 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams.
 ## Requirements
 
 ### macOS
-- macOS 14.0+ for Parakeet on-device transcription
+- macOS 14.0+ for Nemotron on-device transcription
 - macOS 26.0+ for Apple on-device transcription
 - macOS 15.0+ for cloud APIs (Groq/OpenAI)
 - Microphone access
 - Accessibility access (for universal pasting)
 
 ### iOS
-- iOS 17.0+ for Parakeet on-device transcription
+- iOS 17.0+ for Nemotron on-device transcription
 - iOS 26.0+ for latest features (Liquid Glass UI)
 - Microphone access
-- On-device (Parakeet) or Cloud API key (Groq/OpenAI)
+- On-device (Nemotron) or Cloud API key (Groq/OpenAI)
 
 ### General
 - Internet connection (for cloud APIs only, not required for on-device)
 
 ## Privacy
 
-- **Parakeet (On-Device)**: 100% private, audio never leaves your Mac (macOS 14+), ANE-accelerated
+- **Nemotron (On-Device)**: 100% private, audio never leaves your device, ANE-accelerated
 - **Apple (On-Device)**: 100% private, audio never leaves your Mac (macOS 26+)
 - **Cloud APIs**: Audio processed via your chosen API (Groq/OpenAI)
 - API keys stored securely in macOS Keychain

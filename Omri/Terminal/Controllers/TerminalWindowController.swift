@@ -8,7 +8,7 @@
 //  Manages terminal window lifecycle and SSH connections
 //
 
-#if os(macOS)
+#if os(macOS) && SSH_TERMINAL  // SSH terminal lives on the `ssh` branch; gated out of main
 import Cocoa
 import SwiftUI
 import SwiftTerm

@@ -32,9 +32,6 @@ class AudioManager {
     // Session accumulation for streaming mode
     private var accumulatedSessionText: String = ""
 
-    // VAD Integration
-    private var vadManager: VADManager?
-
     // Apple SpeechAnalyzer Integration (macOS 26.0+)
     // Protocol-based approach eliminates type erasure while maintaining availability checking
     private var appleSpeechAnalyzer: (any OnDeviceTranscriptionManager)?
@@ -66,8 +63,6 @@ class AudioManager {
         }
     }
     nonisolated(unsafe) private var cachedIsOnDevice = false
-    nonisolated(unsafe) private var cachedEnableVAD = false
-    nonisolated(unsafe) private var cachedVADManager: VADManager?
     nonisolated(unsafe) private var cachedSpeechAnalyzer: (any OnDeviceTranscriptionManager)?
     nonisolated(unsafe) private var cachedParakeetManager: (any OnDeviceTranscriptionManager)?
 
@@ -77,7 +72,6 @@ class AudioManager {
         self.transcriptionService = transcriptionService
         audioEngine = AVAudioEngine()
         setupKeyboardMonitoring()
-        // VAD will be initialized lazily when first needed
     }
 
     deinit {
@@ -88,10 +82,6 @@ class AudioManager {
         if audioEngine.isRunning {
             audioEngine.inputNode.removeTap(onBus: 0)
             audioEngine.stop()
-        }
-        // Clean up VAD resources
-        Task { @MainActor [weak self] in
-            self?.vadManager?.shutdown()
         }
     }
 
@@ -106,67 +96,6 @@ class AudioManager {
             [weak self] event in
             self?.handleKeyFlags(event)
         }
-    }
-
-    // MARK: - VAD Setup and Management
-
-    private func setupVADManager() async throws {
-        // Initialize VAD manager if enabled (but never for Apple - it has built-in VAD)
-        let provider = Settings.shared.transcriptionProvider
-        if Settings.shared.enableVAD && provider != .apple {
-            let vadManager = VADManager(
-                sensitivity: Settings.shared.vadSensitivity,
-                minSpeechDuration: Settings.shared.vadMinSpeechDuration,
-                silenceTimeout: Settings.shared.vadSilenceTimeout
-            )
-            vadManager.delegate = self
-            self.vadManager = vadManager
-
-            // Initialize VAD synchronously - must complete before use
-            do {
-                try await vadManager.initialize()
-                Logger.log("VAD Manager initialized successfully", context: "Audio", level: .info)
-            } catch {
-                Logger.log("Failed to initialize VAD Manager: \(error.localizedDescription)", context: "Audio", level: .error)
-                self.vadManager = nil
-                throw error
-            }
-        } else {
-            vadManager?.shutdown()
-            vadManager = nil
-        }
-    }
-
-    private func updateVADSettings() {
-        // Update existing VAD with new settings if available
-        if let vadManager = vadManager {
-            vadManager.updateSensitivity(Settings.shared.vadSensitivity)
-            vadManager.updateTimingParameters(
-                newMinSpeechDuration: Settings.shared.vadMinSpeechDuration,
-                newSilenceTimeout: Settings.shared.vadSilenceTimeout
-            )
-        } else if Settings.shared.enableVAD {
-            // Create VAD if it doesn't exist but is now enabled
-            Task {
-                do {
-                    try await setupVADManager()
-                } catch {
-                    Logger.log("Failed to initialize from settings update: \(error.localizedDescription)", context: "VAD", level: .error)
-                }
-            }
-        }
-    }
-
-    // Public methods for settings to call
-    func updateVADSensitivity() {
-        vadManager?.updateSensitivity(Settings.shared.vadSensitivity)
-    }
-
-    func updateVADTimingParameters() {
-        vadManager?.updateTimingParameters(
-            newMinSpeechDuration: Settings.shared.vadMinSpeechDuration,
-            newSilenceTimeout: Settings.shared.vadSilenceTimeout
-        )
     }
 
     private func handleKeyFlags(_ event: NSEvent) {
@@ -214,9 +143,6 @@ class AudioManager {
 
         // Cache settings for audio thread access
         cachedIsOnDevice = provider.isOnDevice
-        // Never use VAD with Apple - it has built-in speech detection
-        cachedEnableVAD = provider == .apple ? false : Settings.shared.enableVAD
-        cachedVADManager = vadManager
         // Note: cachedSpeechAnalyzer is set in continueStartRecording() after analyzer is created
 
         // Microphone permission check
@@ -244,216 +170,65 @@ class AudioManager {
     }
 
     private func continueStartRecording() {
-        let provider = Settings.shared.transcriptionProvider
+        switch Settings.shared.transcriptionProvider {
+        case .apple:
+            startAppleRecording()
+        case .parakeet:
+            startNemotronRecording()
+        default:
+            startAudioEngineAndTap()
+        }
+    }
 
-        // Initialize provider-specific components
-        if provider.isOnDevice {
-            if provider == .apple {
-                // Apple SpeechAnalyzer mode - initialize analyzer first to get format
-                guard #available(macOS 26.0, *) else {
-                    delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("macOS 26.0+ required for Apple on-device transcription"))
-                    return
-                }
+    private func startAppleRecording() {
+        guard #available(macOS 26.0, *) else {
+            delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("macOS 26.0+ required for Apple on-device transcription"))
+            return
+        }
 
-                // Reuse existing analyzer or create new one
-                if appleSpeechAnalyzer == nil {
-                    let analyzer = AppleSpeechAnalyzerManager()
-                    analyzer.delegate = self
-                    appleSpeechAnalyzer = analyzer
-                    Logger.log("Initialized for on-device transcription", context: "SpeechAnalyzer", level: .info)
-                } else {
-                    Logger.log("Reusing existing analyzer instance", context: "SpeechAnalyzer", level: .debug)
-                }
+        if appleSpeechAnalyzer == nil {
+            let analyzer = AppleSpeechAnalyzerManager()
+            analyzer.delegate = self
+            appleSpeechAnalyzer = analyzer
+        }
+        cachedSpeechAnalyzer = appleSpeechAnalyzer
 
-                // Update cached reference for audio thread
-                cachedSpeechAnalyzer = appleSpeechAnalyzer
-                Logger.log("Cached analyzer for audio thread - \(cachedSpeechAnalyzer != nil ? "SUCCESS" : "FAILED")", context: "Audio", level: .debug)
-
-                // Start analyzer session and wait for format
-                Task {
-                    do {
-                        if let analyzer = appleSpeechAnalyzer as? AppleSpeechAnalyzerManager {
-                            let languageSetting = Settings.shared.transcriptionLanguage
-                            let locale: Locale = languageSetting.isEmpty ? .current : Locale(identifier: languageSetting)
-
-                            // Start session and get recommended format
-                            let format = try await analyzer.startSession(locale: locale)
-                            speechAnalyzerFormat = format
-                            Logger.log("Session started with format \(format.sampleRate)Hz", context: "SpeechAnalyzer", level: .info)
-
-                            // Now start audio engine with the recommended format
-                            await MainActor.run {
-                                startAudioEngineAndTap()
-                            }
-                        }
-                    } catch {
-                        await MainActor.run {
-                            self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("SpeechAnalyzer error: \(error.localizedDescription)"))
-                        }
-                    }
-                }
-            } else if provider == .parakeet {
-                // Parakeet CoreML mode - initialize manager first
-                guard #available(macOS 14.0, *) else {
-                    delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("macOS 14.0+ required for Parakeet transcription"))
-                    return
-                }
-
-                // Check if streaming mode is enabled (replaces VAD for Parakeet)
-                // Streaming mode uses FluidAudio's StreamingAsrManager for true real-time transcription
-                let useStreaming = Settings.shared.enableVAD
-
-                // Reuse existing manager or create new one
-                if parakeetManager == nil {
-                    let manager = ParakeetTranscriptionManager()
-                    manager.delegate = self
-                    parakeetManager = manager
-                    Logger.log("Initialized for on-device transcription", context: "Parakeet", level: .info)
-
-                    // Initialize models asynchronously (BLOCKING pattern)
-                    Task {
-                        do {
-                            try await manager.initializeModels()
-                            Logger.log("Models initialized", context: "Parakeet", level: .info)
-
-                            // Set format for audio engine
-                            guard let parakeetFormat = AVAudioFormat(
-                                commonFormat: .pcmFormatFloat32,
-                                sampleRate: 16000,
-                                channels: 1,
-                                interleaved: false
-                            ) else {
-                                await MainActor.run {
-                                    self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Failed to create Parakeet audio format"))
-                                }
-                                return
-                            }
-
-                            await MainActor.run {
-                                self.parakeetFormat = parakeetFormat
-                                self.cachedParakeetManager = self.parakeetManager
-                                // Streaming mode doesn't use VAD
-                                self.cachedEnableVAD = false
-                            }
-
-                            // Start session (streaming or batch)
-                            if useStreaming {
-                                let _ = try await manager.startStreamingSession()
-                                Logger.log("Streaming session started with format \(parakeetFormat.sampleRate)Hz", context: "Parakeet", level: .info)
-                            } else {
-                                let _ = try await manager.startSession()
-                                Logger.log("Batch session started with format \(parakeetFormat.sampleRate)Hz", context: "Parakeet", level: .info)
-                            }
-
-                            await MainActor.run {
-                                self.startAudioEngineAndTap()
-                            }
-                        } catch {
-                            await MainActor.run {
-                                Logger.log("Parakeet init failed: \(error.localizedDescription)", context: "Parakeet", level: .error)
-                                self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Parakeet initialization failed: \(error.localizedDescription)"))
-                            }
-                        }
-                    }
-                } else {
-                    Logger.log("Reusing existing manager instance", context: "Parakeet", level: .debug)
-
-                    // Start new session with existing manager (BLOCKING pattern)
-                    Task {
-                        do {
-                            if let manager = parakeetManager as? ParakeetTranscriptionManager {
-                                // CRITICAL: Wait for models to be initialized before proceeding
-                                if !manager.isInitialized {
-                                    Logger.log("Waiting for model initialization to complete...", context: "Parakeet", level: .info)
-
-                                    // Poll until initialized or timeout (10 seconds max)
-                                    var attempts = 0
-                                    while !manager.isInitialized && attempts < 100 {
-                                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
-                                        attempts += 1
-                                    }
-
-                                    if !manager.isInitialized {
-                                        await MainActor.run {
-                                            Logger.log("Model initialization timed out", context: "Parakeet", level: .error)
-                                            self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Parakeet model initialization timed out. Please restart the app."))
-                                        }
-                                        return
-                                    }
-                                    Logger.log("Models initialized after waiting", context: "Parakeet", level: .info)
-                                }
-
-                                // Create format for audio engine
-                                guard let parakeetFormat = AVAudioFormat(
-                                    commonFormat: .pcmFormatFloat32,
-                                    sampleRate: 16000,
-                                    channels: 1,
-                                    interleaved: false
-                                ) else {
-                                    await MainActor.run {
-                                        self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Failed to create Parakeet audio format"))
-                                    }
-                                    return
-                                }
-
-                                await MainActor.run {
-                                    self.parakeetFormat = parakeetFormat
-                                    self.cachedParakeetManager = self.parakeetManager
-                                    // Streaming mode doesn't use VAD
-                                    self.cachedEnableVAD = false
-                                }
-
-                                // Start session (streaming or batch)
-                                if useStreaming {
-                                    let _ = try await manager.startStreamingSession()
-                                    Logger.log("Streaming session started with format \(parakeetFormat.sampleRate)Hz", context: "Parakeet", level: .info)
-                                } else {
-                                    let _ = try await manager.startSession()
-                                    Logger.log("Batch session started with format \(parakeetFormat.sampleRate)Hz", context: "Parakeet", level: .info)
-                                }
-
-                                await MainActor.run {
-                                    self.startAudioEngineAndTap()
-                                }
-                            }
-                        } catch {
-                            await MainActor.run {
-                                self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Parakeet error: \(error.localizedDescription)"))
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Cloud API mode - initialize VAD if enabled (BLOCKING to prevent race)
-            if Settings.shared.enableVAD {
-                Task {
-                    do {
-                        // CRITICAL: Block audio start until VAD is ready
-                        if vadManager == nil {
-                            Logger.log("Initializing VAD (blocking)...", context: "VAD", level: .info)
-                            try await setupVADManager()
-                            Logger.log("VAD ready", context: "VAD", level: .info)
-                        }
-
-                        await MainActor.run {
-                            self.vadManager?.startListening()
-                            self.cachedVADManager = self.vadManager
-                            // NOW start audio (VAD is guaranteed ready)
-                            self.startAudioEngineAndTap()
-                        }
-                    } catch {
-                        Logger.log("VAD init failed, falling back to batch mode: \(error.localizedDescription)", context: "VAD", level: .warning)
-                        await MainActor.run {
-                            // Disable VAD for this session, use batch mode
-                            self.cachedEnableVAD = false
-                            self.startAudioEngineAndTap()
-                        }
-                    }
-                }
-            } else {
-                // No VAD, start immediately
+        Task {
+            do {
+                guard let analyzer = appleSpeechAnalyzer as? AppleSpeechAnalyzerManager else { return }
+                let language = Settings.shared.transcriptionLanguage
+                let format = try await analyzer.startSession(locale: language.isEmpty ? .current : Locale(identifier: language))
+                speechAnalyzerFormat = format
                 startAudioEngineAndTap()
+            } catch {
+                delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("SpeechAnalyzer error: \(error.localizedDescription)"))
+            }
+        }
+    }
+
+    private func startNemotronRecording() {
+        guard #available(macOS 14.0, *) else {
+            delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("macOS 14.0+ required for Nemotron transcription"))
+            return
+        }
+
+        if parakeetManager == nil {
+            let manager = ParakeetTranscriptionManager()
+            manager.delegate = self
+            parakeetManager = manager
+        }
+        cachedParakeetManager = parakeetManager
+
+        Task {
+            do {
+                guard let manager = parakeetManager as? ParakeetTranscriptionManager else { return }
+                if !manager.isInitialized {
+                    try await manager.initializeModels()
+                }
+                parakeetFormat = try await manager.startSession()
+                startAudioEngineAndTap()
+            } catch {
+                delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("Nemotron error: \(error.localizedDescription)"))
             }
         }
     }
@@ -487,9 +262,9 @@ class AudioManager {
             optimizedFormat = analyzerFormat
             Logger.log("Using SpeechAnalyzer recommended format - \(analyzerFormat.sampleRate)Hz, \(analyzerFormat.channelCount) channels", context: "Audio", level: .debug)
         } else if let parakeetFormat = parakeetFormat {
-            // Use Parakeet's format (16kHz mono Float32)
+            // Use Nemotron's format (16kHz mono Float32)
             optimizedFormat = parakeetFormat
-            Logger.log("Using Parakeet format - \(parakeetFormat.sampleRate)Hz, \(parakeetFormat.channelCount) channels", context: "Audio", level: .debug)
+            Logger.log("Using Nemotron format - \(parakeetFormat.sampleRate)Hz, \(parakeetFormat.channelCount) channels", context: "Audio", level: .debug)
         } else {
             // Cloud APIs - use 16kHz mono Float32
             guard let cloudFormat = AVAudioFormat(
@@ -554,53 +329,16 @@ class AudioManager {
             return
         }
 
-        // Debug: Log routing decision (once at start)
-        struct OnceToken { static var didLog = false }
-        if !OnceToken.didLog {
-            OnceToken.didLog = true
-            Logger.log("Routing: VAD=\(cachedEnableVAD), OnDevice=\(cachedIsOnDevice), VADMgr=\(cachedVADManager != nil), Analyzer=\(cachedSpeechAnalyzer != nil), Parakeet=\(cachedParakeetManager != nil)", context: "Audio", level: .debug)
-        }
-
-        // Route buffers based on cached provider settings (no MainActor access)
-        // Priority: VAD (if enabled) > On-device > Batch recording
-        if cachedEnableVAD, let vadManager = cachedVADManager {
-            // VAD mode - works with both cloud and on-device providers
-            // Process buffer through VAD for real-time speech detection and streaming transcription
-            // VADManager is @MainActor, so dispatch to MainActor
-            Task { @MainActor in
-                vadManager.processAudioBuffer(optimizedBuffer)
-            }
-        } else if cachedIsOnDevice {
-            // On-device batch mode (no VAD) - feed buffers directly to on-device manager
-            // Apple SpeechAnalyzer mode - feed buffer directly to analyzer
-            if #available(macOS 26.0, *) {
-                if let analyzer = cachedSpeechAnalyzer as? AppleSpeechAnalyzerManager {
-                    Task { @MainActor in
-                        analyzer.feedAudio(optimizedBuffer)
-                    }
-                } else if let manager = cachedParakeetManager as? ParakeetTranscriptionManager {
-                    // Parakeet mode - feed buffer to manager
-                    Task { @MainActor in
-                        manager.feedAudio(optimizedBuffer)
-                    }
-                } else {
-                    Logger.log("WARNING - No on-device manager available", context: "Audio", level: .warning)
-                }
+        if cachedIsOnDevice {
+            if #available(macOS 26.0, *), let analyzer = cachedSpeechAnalyzer as? AppleSpeechAnalyzerManager {
+                Task { @MainActor in analyzer.feedAudio(optimizedBuffer) }
             } else if let manager = cachedParakeetManager as? ParakeetTranscriptionManager {
-                // Parakeet mode (macOS 15-25) - feed buffer to manager
-                Task { @MainActor in
-                    manager.feedAudio(optimizedBuffer)
-                }
+                Task { @MainActor in manager.feedAudio(optimizedBuffer) }
+            } else {
+                Logger.log("No on-device manager available", context: "Audio", level: .warning)
             }
         } else {
-            // Cloud API batch mode (no VAD) - traditional recording: store all audio for batch processing
             audioBuffers.append(optimizedBuffer)
-
-            // Log every 50 buffers to track progress
-            if audioBuffers.count % 50 == 0 {
-                let totalFrames = audioBuffers.reduce(0) { $0 + Int($1.frameLength) }
-                Logger.log("Captured \(audioBuffers.count) buffers (\(totalFrames) frames total)", context: "Audio", level: .debug)
-            }
         }
     }
     
@@ -649,32 +387,13 @@ class AudioManager {
 
         let provider = Settings.shared.transcriptionProvider
 
-        // Handle provider-specific cleanup
         if provider == .apple {
-            // Apple SpeechAnalyzer mode (never uses external VAD)
             if #available(macOS 26.0, *) {
                 stopAppleSpeechAnalyzerSession()
             }
         } else if provider == .parakeet {
-            // Parakeet mode - handles both streaming and batch internally
             stopParakeetSession()
-        } else if Settings.shared.enableVAD {
-            // Cloud API + VAD mode
-            // Stop VAD - any pending speech will be emitted immediately
-            vadManager?.stopListening()
-            audioBuffers.removeAll()
-
-            // Finalize session with AI if enabled (no queue wait needed)
-            Task {
-                // Small delay to let any final chunk complete transcription
-                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-
-                if !accumulatedSessionText.isEmpty {
-                    await finalizeSessionText()
-                }
-            }
         } else {
-            // Cloud API batch mode (no VAD): process collected audio buffers
             processCollectedBuffers()
         }
     }
@@ -712,7 +431,7 @@ class AudioManager {
 
                 // For streaming mode, handle AI processing of accumulated text
                 if isStreaming && shouldApplyAI && !accumulatedSessionText.isEmpty {
-                    Logger.log("Applying AI polish to streaming session text", context: "Parakeet", level: .info)
+                    Logger.log("Applying AI polish to streaming session text", context: "Nemotron", level: .info)
                     await pasteManager.processAndPasteText(accumulatedSessionText, withAI: true)
                 }
             }
@@ -787,60 +506,6 @@ class AudioManager {
         }
     }
 
-    private func transcribeCloudChunk(_ audioData: Data) async -> String? {
-        guard let service = transcriptionService else { return nil }
-
-        do {
-            let selectedModel = Settings.shared.transcriptionModel
-            let languageSetting = Settings.shared.transcriptionLanguage
-            let language = languageSetting.isEmpty ? nil : languageSetting
-
-            let response = try await service.transcribe(
-                audioData: audioData,
-                fileName: "chunk_\(UUID().uuidString).wav",
-                model: selectedModel,
-                language: language,
-                prompt: nil,
-                responseFormat: "json",
-                temperature: nil,
-                timestampGranularities: nil
-            )
-
-            return response.text
-        } catch {
-            Logger.log("Chunk transcription failed: \(error.localizedDescription)", context: "Queue", level: .error)
-            return nil
-        }
-    }
-
-    private func transcribeParakeetChunk(_ audioSamples: [Float]) async -> String? {
-        guard let manager = parakeetManager as? ParakeetTranscriptionManager else { return nil }
-
-        Logger.log("Transcribing chunk with \(audioSamples.count) samples", context: "Parakeet", level: .debug)
-
-        // Transcribe the chunk (returns text directly)
-        return await manager.transcribeChunk(audioSamples)
-    }
-
-    // NEW: Finalize session with AI processing (once at end)
-    private func finalizeSessionText() async {
-        let finalText = accumulatedSessionText
-
-        Logger.log("Finalizing session with \(finalText.count) chars", context: "Session", level: .info)
-
-        // Apply AI if enabled (regardless of target app)
-        let shouldApplyAI = wasShiftPressedOnStart && Settings.shared.enableAIProcessing
-
-        if shouldApplyAI {
-            Logger.log("Applying AI polish to accumulated text", context: "Session", level: .info)
-            // Clear the interim text and replace with AI-processed version
-            await pasteManager.processAndPasteText(finalText, withAI: true)
-        } else {
-            Logger.log("Skipping AI (not requested or disabled)", context: "Session", level: .info)
-            // Text already shown as interim results, no further processing needed
-        }
-    }
-
     private func pcmBuffersToWavData(buffers: [AVAudioPCMBuffer], format: AVAudioFormat) -> Data? {
         guard !buffers.isEmpty else { return nil }
         
@@ -871,73 +536,6 @@ class AudioManager {
     private func cleanupTemporaryFile(at url: URL) {
         try? FileManager.default.removeItem(at: url)
     }
-}
-
-// MARK: - VADManagerDelegate
-
-@MainActor
-extension AudioManager: VADManagerDelegate {
-
-    func vadManagerDidStartListening() {
-        Logger.log("Started listening for speech", context: "VAD", level: .debug)
-    }
-
-    func vadManagerDidStopListening() {
-        Logger.log("Stopped listening for speech", context: "VAD", level: .debug)
-    }
-
-    func vadManagerDidDetectSpeechStart() {
-        Logger.log("Speech started", context: "VAD", level: .debug)
-        delegate?.audioManagerDidStartRecording()
-    }
-
-    func vadManagerDidDetectSpeechEnd() {
-        Logger.log("Speech ended", context: "VAD", level: .debug)
-        // Recording continues until user releases button
-    }
-
-    /// Unified speech chunk callback - lazy conversion avoids wasted work
-    func vadManager(didCompleteSpeechChunk chunk: VADSpeechChunk) {
-        Logger.log("Received speech chunk (\(String(format: "%.2f", chunk.duration))s)", context: "VAD", level: .debug)
-
-        // Skip very short chunks
-        guard chunk.duration >= 0.5 else {
-            Logger.log("Chunk too short (\(String(format: "%.2f", chunk.duration))s), skipping", context: "VAD", level: .debug)
-            return
-        }
-
-        let provider = Settings.shared.transcriptionProvider
-
-        // Process immediately based on provider - no queue, instant streaming
-        Task {
-            var transcribedText: String?
-
-            if provider == .parakeet {
-                // On-device: use Float samples (lazy conversion)
-                if let samples = chunk.floatSamples {
-                    transcribedText = await transcribeParakeetChunk(samples)
-                }
-            } else if !provider.isOnDevice {
-                // Cloud API: use WAV data (lazy conversion, in-memory)
-                if let wavData = chunk.wavData {
-                    transcribedText = await transcribeCloudChunk(wavData)
-                }
-            }
-
-            // Stream text immediately (no accumulation queue)
-            if let text = transcribedText, !text.isEmpty {
-                accumulatedSessionText += (accumulatedSessionText.isEmpty ? "" : " ") + text
-                Logger.log("Streaming: '\(text)'", context: "VAD", level: .info)
-                await pasteManager.appendStreamingText(text, withAI: false)
-            }
-        }
-    }
-
-    func vadManager(didEncounterError error: VADError) {
-        Logger.log("Error: \(error.localizedDescription)", context: "VAD", level: .error)
-        delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed("VAD error: \(error.localizedDescription)"))
-    }
-
 }
 
 // MARK: - AppleSpeechAnalyzerDelegate
@@ -1030,7 +628,7 @@ extension AudioManager: ParakeetTranscriptionDelegate {
     // MARK: - Batch Mode Callbacks
 
     func parakeet(didReceivePartialTranscription text: String) async {
-        Logger.log("Partial transcription - '\(text)'", context: "Parakeet", level: .debug)
+        Logger.log("Partial transcription - '\(text)'", context: "Nemotron", level: .debug)
 
         // For batch mode: Stream partial results without AI
         // Note: Streaming mode uses volatile/confirmed callbacks instead
@@ -1038,7 +636,7 @@ extension AudioManager: ParakeetTranscriptionDelegate {
     }
 
     func parakeet(didReceiveFinalTranscription text: String) async {
-        Logger.log("Final transcription - '\(text)'", context: "Parakeet", level: .info)
+        Logger.log("Final transcription - '\(text)'", context: "Nemotron", level: .info)
 
         // Process with AI if enabled (applies to both batch and streaming final result)
         let shouldApplyAI = wasShiftPressedOnStart && Settings.shared.enableAIProcessing
@@ -1050,7 +648,7 @@ extension AudioManager: ParakeetTranscriptionDelegate {
     func parakeet(didReceiveVolatileTranscription text: String) async {
         // Volatile text is in-progress and may change
         // Show it immediately for real-time feedback, but don't accumulate
-        Logger.log("Volatile: '\(text)'", context: "Parakeet", level: .debug)
+        Logger.log("Volatile: '\(text)'", context: "Nemotron", level: .debug)
 
         // Update the display with volatile text (will be replaced by confirmed text)
         await self.pasteManager.updateVolatileText(text)
@@ -1059,7 +657,7 @@ extension AudioManager: ParakeetTranscriptionDelegate {
     func parakeet(didReceiveConfirmedTranscription text: String) async {
         // Confirmed text is stable and won't change
         // Append to accumulated session text and show to user
-        Logger.log("Confirmed: '\(text)'", context: "Parakeet", level: .info)
+        Logger.log("Confirmed: '\(text)'", context: "Nemotron", level: .info)
 
         // Accumulate confirmed text for final AI processing
         accumulatedSessionText += (accumulatedSessionText.isEmpty ? "" : " ") + text
@@ -1069,17 +667,17 @@ extension AudioManager: ParakeetTranscriptionDelegate {
     }
 
     func parakeetWillDownloadModels() async {
-        Logger.log("Downloading models...", context: "Parakeet", level: .info)
+        Logger.log("Downloading models...", context: "Nemotron", level: .info)
 
         // Show download status in menu bar (minimalist native UX)
         await MainActor.run {
-            AppDelegate.shared?.showDownloadStatus(message: "Downloading Parakeet models (600MB)...")
+            AppDelegate.shared?.showDownloadStatus(message: "Downloading Nemotron model (600MB)...")
         }
 
         // Also send notification for background awareness
         let content = UNMutableNotificationContent()
         content.title = "Omri"
-        content.body = "Downloading Parakeet language model (600MB)..."
+        content.body = "Downloading Nemotron language model (600MB)..."
         content.sound = nil
 
         let request = UNNotificationRequest(
@@ -1091,12 +689,12 @@ extension AudioManager: ParakeetTranscriptionDelegate {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            Logger.log("Failed to show download notification: \(error.localizedDescription)", context: "Parakeet", level: .warning)
+            Logger.log("Failed to show download notification: \(error.localizedDescription)", context: "Nemotron", level: .warning)
         }
     }
 
     func parakeetDidDownloadModels() async {
-        Logger.log("Models download complete", context: "Parakeet", level: .info)
+        Logger.log("Models download complete", context: "Nemotron", level: .info)
 
         // Hide download status
         await MainActor.run {
@@ -1106,7 +704,7 @@ extension AudioManager: ParakeetTranscriptionDelegate {
         // Notify user that download completed
         let content = UNMutableNotificationContent()
         content.title = "Omri"
-        content.body = "Parakeet model downloaded. On-device transcription ready!"
+        content.body = "Nemotron model downloaded. On-device transcription ready!"
         content.sound = nil
 
         let request = UNNotificationRequest(
@@ -1118,12 +716,12 @@ extension AudioManager: ParakeetTranscriptionDelegate {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            Logger.log("Failed to show completion notification: \(error.localizedDescription)", context: "Parakeet", level: .warning)
+            Logger.log("Failed to show completion notification: \(error.localizedDescription)", context: "Nemotron", level: .warning)
         }
     }
 
     func parakeet(didEncounterError error: ParakeetError) async {
-        Logger.log("Error - \(error.localizedDescription)", context: "Parakeet", level: .error)
+        Logger.log("Error - \(error.localizedDescription)", context: "Nemotron", level: .error)
         await MainActor.run {
             self.delegate?.audioManager(didReceiveError: AudioManagerError.recordingFailed(error.localizedDescription))
         }

@@ -44,7 +44,7 @@ struct DictationSettingsContent: View {
                                 .gridColumnAlignment(.trailing)
                             Picker("", selection: $settings.transcriptionProviderRaw) {
                                 ForEach(TranscriptionProvider.allCases, id: \.rawValue) { provider in
-                                    Text(provider.rawValue).tag(provider.rawValue)
+                                    Text(provider.displayName).tag(provider.rawValue)
                                 }
                             }
                             .labelsHidden()
@@ -99,7 +99,7 @@ struct DictationSettingsContent: View {
                     SettingsSectionFooter(text: transcriptionFooterText)
                 }
 
-                // Parakeet Model Download (for on-device transcription)
+                // Nemotron Model Download (for on-device transcription)
                 if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
                     parakeetModelSection
                 }
@@ -170,33 +170,6 @@ struct DictationSettingsContent: View {
                     }
                 }
 
-                // Voice Activity Detection / Streaming Mode
-                if !settings.transcriptionProvider.isOnDevice || settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack(spacing: 8) {
-                            SettingsSectionHeader(title: settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Streaming Mode" : "Smart Voice Detection")
-                            if settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
-                                Text("Experimental")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.orange)
-                                    .clipShape(Capsule())
-                            }
-                        }
-
-                        Toggle(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Enable Real-Time Streaming" : "Enable Smart Recording", isOn: $settings.enableVAD)
-
-                        if settings.enableVAD && settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
-                            vadControls
-                        }
-
-                        SettingsSectionFooter(text: vadFooterText)
-                    }
-                }
-
                 // Keyboard Shortcuts
                 VStack(alignment: .leading, spacing: 16) {
                     SettingsSectionHeader(title: "Keyboard Shortcuts")
@@ -205,7 +178,7 @@ struct DictationSettingsContent: View {
                         KeyboardShortcutRow(
                             description: "Start dictation",
                             shortcut: "fn",
-                            detail: settings.enableVAD ? "Press to activate smart recording" : "Hold to record voice input"
+                            detail: "Hold to record voice input"
                         )
 
                         KeyboardShortcutRow(
@@ -230,7 +203,7 @@ struct DictationSettingsContent: View {
             Section {
                 Picker("Service", selection: $settings.transcriptionProviderRaw) {
                     ForEach(TranscriptionProvider.allCases, id: \.rawValue) { provider in
-                        Text(provider.rawValue).tag(provider.rawValue)
+                        Text(provider.displayName).tag(provider.rawValue)
                     }
                 }
 
@@ -269,7 +242,7 @@ struct DictationSettingsContent: View {
                 Text(transcriptionFooterText)
             }
 
-            // Parakeet Model Download (for on-device transcription)
+            // Nemotron Model Download (for on-device transcription)
             if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
                 Section {
                     parakeetModelRow
@@ -343,144 +316,12 @@ struct DictationSettingsContent: View {
                     .accessibilityLabel("API Key configuration")
                 }
             }
-
-            // Voice Activity Detection / Streaming Mode (hide for Apple which has built-in VAD)
-            if !settings.transcriptionProvider.isOnDevice || settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-                Section {
-                    Toggle(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Enable Real-Time Streaming" : "Enable Smart Recording", isOn: $settings.enableVAD)
-
-                    if settings.enableVAD && settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
-                        vadControls
-                    }
-                } header: {
-                    HStack(spacing: 8) {
-                        Text(settings.transcriptionProviderRaw == "Parakeet (On-Device)" ? "Streaming Mode" : "Smart Voice Detection")
-                        if settings.transcriptionProviderRaw != "Parakeet (On-Device)" {
-                            Text("Experimental")
-                                .font(.caption2)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.orange)
-                                .clipShape(Capsule())
-                        }
-                    }
-                } footer: {
-                    Text(vadFooterText)
-                }
-            }
         }
     }
 
     // MARK: - Shared Components
 
-    @ViewBuilder
-    private var vadControls: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Noise Floor")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Text("\(Int((1.0 - settings.vadSensitivity) * 10))/10")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                HStack {
-                    Text("Low")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    Slider(
-                        value: Binding(
-                            get: { 1.0 - settings.vadSensitivity },
-                            set: { settings.vadSensitivity = 1.0 - $0 }
-                        ),
-                        in: 0.1...0.9,
-                        step: 0.1
-                    )
-
-                    Text("High")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Noise floor")
-                .accessibilityValue("\(Int((1.0 - settings.vadSensitivity) * 10)) out of 10")
-
-                Text("Higher = detect speech in noisy environments")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Min Speech Duration")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Text("\(settings.vadMinSpeechDuration, specifier: "%.2f")s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                HStack {
-                    Text("0.1s")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    Slider(value: $settings.vadMinSpeechDuration, in: 0.1...1.0, step: 0.05)
-
-                    Text("1.0s")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Minimum speech duration")
-                .accessibilityValue("\(settings.vadMinSpeechDuration, specifier: "%.2f") seconds")
-
-                Text("Minimum length of speech to detect")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Silence Timeout")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Text("\(settings.vadSilenceTimeout, specifier: "%.1f")s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                HStack {
-                    Text("0.5s")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-
-                    Slider(value: $settings.vadSilenceTimeout, in: 0.5...3.0, step: 0.1)
-
-                    Text("3.0s")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Silence timeout")
-                .accessibilityValue("\(settings.vadSilenceTimeout, specifier: "%.1f") seconds")
-
-                Text("How long to wait after speech stops")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-
-    // MARK: - Parakeet Model Download UI
+    // MARK: - Nemotron Model Download UI
 
     /// macOS version - full section with header
     @available(macOS 14.0, iOS 17.0, *)
@@ -491,9 +332,9 @@ struct DictationSettingsContent: View {
 
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Parakeet TDT v3")
+                    Text("Nemotron 3.5 ASR")
                         .font(.headline)
-                    Text("~600 MB • 25 languages • NVIDIA CC-BY 4.0")
+                    Text("~600 MB • ~40 languages • on-device")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -516,7 +357,7 @@ struct DictationSettingsContent: View {
     private var parakeetModelRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Parakeet TDT v3")
+                Text("Nemotron 3.5 ASR")
                     .font(.headline)
                 Text("25 languages")
                     .font(.caption)
@@ -599,8 +440,8 @@ struct DictationSettingsContent: View {
         isCheckingModel = true
 
         let manager = ModelDownloadManager.shared
-        await manager.checkModelStatus("parakeet-tdt-v3")
-        parakeetState = manager.state(for: "parakeet-tdt-v3")
+        await manager.checkModelStatus("nemotron-multilingual")
+        parakeetState = manager.state(for: "nemotron-multilingual")
 
         isCheckingModel = false
     }
@@ -611,14 +452,14 @@ struct DictationSettingsContent: View {
         parakeetState = .downloading
 
         let manager = ModelDownloadManager.shared
-        await manager.downloadModel("parakeet-tdt-v3")
-        parakeetState = manager.state(for: "parakeet-tdt-v3")
+        await manager.downloadModel("nemotron-multilingual")
+        parakeetState = manager.state(for: "nemotron-multilingual")
     }
 
     @available(macOS 14.0, iOS 17.0, *)
     private func clearParakeetModel() {
         let manager = ModelDownloadManager.shared
-        manager.clearModel("parakeet-tdt-v3")
+        manager.clearModel("nemotron-multilingual")
         parakeetState = .notDownloaded
     }
 
@@ -631,28 +472,12 @@ struct DictationSettingsContent: View {
             #if os(macOS)
             return "100% private, offline transcription. No API key required. Faster response times."
             #else
-            return "macOS 26.0+ only. Use Parakeet for on-device transcription on iOS."
+            return "macOS 26.0+ only. Use Nemotron for on-device transcription on iOS."
             #endif
         } else if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-            return "On-device multilingual (25 languages). ANE-accelerated. No API key required. Works offline."
+            return "Nemotron on-device multilingual ASR. ANE-accelerated. No API key required. Works offline."
         }
         return ""
-    }
-
-    private var vadFooterText: String {
-        if settings.enableVAD {
-            if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-                return "Low-latency streaming transcription. Words appear as you speak (~0.5s latency). For fastest dictate-to-paste, disable this and use batch mode."
-            } else {
-                return "⚠️ Not recommended for cloud APIs. Each speech segment requires a separate API call, causing delays. Disable this for best experience with Groq/OpenAI."
-            }
-        } else {
-            if settings.transcriptionProviderRaw == "Parakeet (On-Device)" {
-                return "Batch mode: fastest dictate-to-paste. All audio processed at once when you release the key."
-            } else {
-                return "Recommended: fastest dictate-to-paste. Single API call when you release the key."
-            }
-        }
     }
 
     // MARK: - Endpoint Validation Helpers

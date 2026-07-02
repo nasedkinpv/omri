@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import AVFAudio
 
 @MainActor
 protocol AudioRecorderDelegate: AnyObject {
@@ -14,6 +15,11 @@ protocol AudioRecorderDelegate: AnyObject {
     func audioRecorderDidStopRecording()
     func audioRecorder(didReceiveError error: AudioRecorderError)
     func audioRecorder(didCompleteWithAudioData audioData: Data)
+    func audioRecorder(didCaptureBuffer buffer: AVAudioPCMBuffer)
+}
+
+extension AudioRecorderDelegate {
+    func audioRecorder(didCaptureBuffer buffer: AVAudioPCMBuffer) {}
 }
 
 enum AudioRecorderError: LocalizedError {

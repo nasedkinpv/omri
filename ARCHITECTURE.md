@@ -18,7 +18,6 @@ flowchart LR
         AppDelegate
         AudioManager
         PasteManager
-        VADManager
         AppleSpeech["AppleSpeechAnalyzer"]
         MacTerminal["TerminalWindowController"]
     end
@@ -71,7 +70,9 @@ classDiagram
 
     class ParakeetTranscriptionManager {
         +initializeModels()
-        +transcribeChunk(samples) String?
+        +startSession()
+        +feedAudio(buffer)
+        +stopSession()
     }
 
     class AppleSpeechAnalyzerManager {
@@ -94,7 +95,6 @@ classDiagram
 sequenceDiagram
     participant User
     participant AudioManager
-    participant VAD as VADManager
     participant Provider as Transcription Provider
     participant PasteManager
     participant App as Target App
@@ -102,15 +102,12 @@ sequenceDiagram
     User->>AudioManager: Hold fn key
     AudioManager->>AudioManager: Start AVAudioEngine
 
-    alt VAD Enabled
-        loop Audio Chunks
-            AudioManager->>VAD: processAudioBuffer
-            VAD-->>VAD: Detect speech
-            VAD->>Provider: Speech chunk
-            Provider-->>PasteManager: Partial text
-            PasteManager->>App: Stream text
+    alt On-device
+        loop Audio Buffers
+            AudioManager->>Provider: feedAudio(buffer)
+            Provider-->>PasteManager: Partial/final text
         end
-    else Batch Mode
+    else Cloud
         AudioManager->>AudioManager: Collect buffers
     end
 

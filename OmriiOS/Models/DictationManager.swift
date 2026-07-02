@@ -5,8 +5,7 @@
 //  Created by beneric.studio
 //  Copyright © 2025 beneric.studio. All rights reserved.
 //
-//  iOS-specific dictation manager with multi-provider support (cloud + Parakeet on-device)
-//  Supports Parakeet streaming mode for real-time transcription
+//  iOS-specific dictation manager with multi-provider support (cloud + Nemotron on-device)
 
 import AVFoundation
 import Foundation
@@ -24,17 +23,13 @@ class DictationManager {
     var onTranscriptionComplete: ((String) -> Void)?
     var onModelLoading: ((Bool) -> Void)?  // true = loading, false = done
 
-    // Streaming mode callbacks (Parakeet real-time transcription)
-    var onVolatileText: ((String) -> Void)?      // In-progress text (may change)
-    var onConfirmedText: ((String) -> Void)?     // Stable text (won't change)
+    // Streaming mode callbacks (Nemotron real-time transcription)
+    var onVolatileText: ((String) -> Void)?
+    var onConfirmedText: ((String) -> Void)?
 
     private let audioRecorder = AudioRecorder()
     private var transcriptionService: TranscriptionService?
     private var parakeetManager: ParakeetTranscriptionManager?
-
-    // Streaming mode state
-    private var isStreamingMode = false
-    private var accumulatedConfirmedText = ""
 
     init() {
         audioRecorder.delegate = self
@@ -46,7 +41,7 @@ class DictationManager {
     func updateTranscriptionService() {
         let provider = Settings.shared.transcriptionProvider
 
-        // Handle Parakeet on-device transcription
+        // Handle Nemotron on-device transcription
         if provider == .parakeet {
             transcriptionService = nil
             if parakeetManager == nil {
@@ -97,31 +92,15 @@ class DictationManager {
         // Update service in case provider or settings changed
         updateTranscriptionService()
 
-        // Handle Parakeet on-device transcription
+        // Handle Nemotron on-device transcription
         if let parakeet = parakeetManager {
-            // Initialize models if needed (only once, downloads on first use)
             if !parakeet.isInitialized {
                 try await parakeet.initializeModels()
             }
-
-            // Check if streaming mode is enabled
-            isStreamingMode = Settings.shared.enableVAD  // VAD toggle = streaming mode for Parakeet
-            accumulatedConfirmedText = ""
-
-            // Start Parakeet session (streaming or batch)
-            if isStreamingMode {
-                // Streaming mode: StreamingAsrManager handles its own microphone capture
-                _ = try await parakeet.startStreamingSession()
-                Logger.log("Parakeet streaming session started", context: "Dictation", level: .info)
-                // Don't start audioRecorder - StreamingAsrManager uses source: .microphone
-                return
-            } else {
-                // Batch mode: We capture audio and feed it to Parakeet
-                _ = try await parakeet.startSession()
-                Logger.log("Parakeet batch session started", context: "Dictation", level: .info)
-                try await audioRecorder.startRecording()
-                return
-            }
+            _ = try await parakeet.startSession()
+            Logger.log("Nemotron session started", context: "Dictation", level: .info)
+            try await audioRecorder.startRecording()
+            return
         }
 
         // Cloud providers require API key
@@ -133,33 +112,11 @@ class DictationManager {
     }
 
     func stopDictation() async {
-        // Handle Parakeet on-device transcription
+        // Handle Nemotron on-device transcription
         if let parakeet = parakeetManager {
-            if isStreamingMode {
-                // Streaming mode: Just stop the session (StreamingAsrManager handles its own audio)
-                // Final text is delivered via delegate callback
-                Logger.log("Stopping Parakeet streaming session", context: "Dictation", level: .info)
-                await parakeet.stopSession()
-                isStreamingMode = false
-                return
-            } else {
-                // Batch mode: Stop recording and feed buffers to Parakeet
-                let (buffers, _) = await audioRecorder.stopRecordingAndGetBuffers()
-
-                guard !buffers.isEmpty else {
-                    onError?(DictationError.noAudioData)
-                    return
-                }
-
-                // Feed buffers to Parakeet
-                for buffer in buffers {
-                    parakeet.feedAudio(buffer)
-                }
-
-                // Stop Parakeet session (triggers transcription and delegate callback)
-                await parakeet.stopSession()
-                return
-            }
+            _ = await audioRecorder.stopRecordingAndGetBuffers()
+            await parakeet.stopSession()
+            return
         }
 
         // Cloud API transcription
@@ -214,26 +171,23 @@ class DictationManager {
     }
 }
 
-// MARK: - ParakeetTranscriptionDelegate
+// MARK: - Nemotron Transcription Delegate
 
 extension DictationManager: ParakeetTranscriptionDelegate {
     func parakeet(didReceivePartialTranscription text: String) async {
         // Batch mode partial transcriptions (not used in streaming)
-        Logger.log("Parakeet partial - '\(text)'", context: "Dictation", level: .debug)
+        Logger.log("Nemotron partial - '\(text)'", context: "Dictation", level: .debug)
     }
 
     func parakeet(didReceiveVolatileTranscription text: String) async {
         // Streaming mode: in-progress text that may change
-        Logger.log("Parakeet volatile - '\(text)'", context: "Dictation", level: .debug)
+        Logger.log("Nemotron volatile - '\(text)'", context: "Dictation", level: .debug)
         onVolatileText?(text)
     }
 
     func parakeet(didReceiveConfirmedTranscription text: String) async {
-        // Streaming mode: stable text that won't change
-        // Note: Send only the new increment (text parameter), not accumulated
-        Logger.log("Parakeet confirmed increment - '\(text)'", context: "Dictation", level: .info)
-        accumulatedConfirmedText += text
-        onConfirmedText?(text)  // Send just the increment for terminal input
+        Logger.log("Nemotron confirmed - '\(text)'", context: "Dictation", level: .info)
+        onConfirmedText?(text)
     }
 
     func parakeet(didReceiveFinalTranscription text: String) async {
@@ -243,22 +197,22 @@ extension DictationManager: ParakeetTranscriptionDelegate {
             return
         }
 
-        Logger.log("Parakeet transcription complete - '\(trimmed)'", context: "Dictation", level: .info)
+        Logger.log("Nemotron transcription complete - '\(trimmed)'", context: "Dictation", level: .info)
         onTranscriptionComplete?(trimmed)
     }
 
     func parakeetWillDownloadModels() async {
-        Logger.log("Parakeet downloading models...", context: "Dictation", level: .info)
+        Logger.log("Nemotron downloading models...", context: "Dictation", level: .info)
         onModelLoading?(true)  // Show loading state
     }
 
     func parakeetDidDownloadModels() async {
-        Logger.log("Parakeet models downloaded", context: "Dictation", level: .info)
+        Logger.log("Nemotron models downloaded", context: "Dictation", level: .info)
         onModelLoading?(false)  // Hide loading state
     }
 
     func parakeet(didEncounterError error: ParakeetError) async {
-        Logger.log("Parakeet error - \(error.localizedDescription)", context: "Dictation", level: .error)
+        Logger.log("Nemotron error - \(error.localizedDescription)", context: "Dictation", level: .error)
         onError?(error)
     }
 }
@@ -280,6 +234,10 @@ extension DictationManager: AudioRecorderDelegate {
 
     func audioRecorder(didCompleteWithAudioData audioData: Data) {
         // Audio data handled in stopDictation()
+    }
+
+    func audioRecorder(didCaptureBuffer buffer: AVAudioPCMBuffer) {
+        parakeetManager?.feedAudio(buffer)
     }
 }
 

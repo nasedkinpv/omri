@@ -21,7 +21,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var pasteManager: PasteManager!  // Keep a reference to PasteManager
     private var transformationService: TransformationService?
     private var settingsWindowController: SettingsWindowController?
+    #if SSH_TERMINAL
     private var sshConnectionsWindowController: SSHConnectionsWindowController?
+    #endif
     private var downloadStatusMenuItem: NSMenuItem?  // For showing download progress
 
     // Shared reference for accessing AudioManager from Settings
@@ -60,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppDelegate.shared = self
 
         // Register custom fonts (Hack Nerd Font for terminal)
-        #if os(macOS)
+        #if os(macOS) && SSH_TERMINAL
         FontRegistration.registerHackNerdFont()
         #endif
 
@@ -216,8 +218,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(
             NSMenuItem(title: "Settings...", action: #selector(showSettings), keyEquivalent: ","))
+        #if SSH_TERMINAL
         menu.addItem(
             NSMenuItem(title: "SSH Connections...", action: #selector(showSSHConnections), keyEquivalent: ""))
+        #endif
         menu.addItem(
             NSMenuItem(
                 title: "Check Permissions", action: #selector(checkPermissions), keyEquivalent: "p")
@@ -240,6 +244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    #if SSH_TERMINAL
     @objc private func showSSHConnections() {
         if sshConnectionsWindowController == nil {
             sshConnectionsWindowController = SSHConnectionsWindowController()
@@ -249,6 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         sshConnectionsWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
+    #endif
 
     private func setupPermissions() {
         AVCaptureDevice.requestAccess(for: .audio) { granted in

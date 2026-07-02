@@ -5,7 +5,7 @@
 //  Created by beneric.studio
 //  Copyright © 2025 beneric.studio. All rights reserved.
 //
-//  Flexible manager for on-device model downloads (Parakeet, Apple SpeechAnalyzer, etc.)
+//  Flexible manager for on-device model downloads (Nemotron, Apple SpeechAnalyzer, etc.)
 //
 
 import Foundation
@@ -63,13 +63,13 @@ enum ModelDownloadState: Equatable {
     }
 }
 
-// MARK: - Parakeet Model Implementation
+// MARK: - Nemotron Model Implementation
 
 @available(macOS 14.0, iOS 17.0, *)
-struct ParakeetModel: DownloadableModel {
-    let id = "parakeet-tdt-v3"
-    let displayName = "Parakeet TDT v3"
-    let description = "Multilingual speech recognition (25 languages) • NVIDIA CC-BY 4.0"
+struct NemotronModel: DownloadableModel {
+    let id = "nemotron-multilingual"
+    let displayName = "Nemotron 3.5 ASR"
+    let description = "On-device multilingual speech recognition (~40 languages)"
     let estimatedSize = "~600 MB"
 
     var isAvailable: Bool {
@@ -81,36 +81,25 @@ struct ParakeetModel: DownloadableModel {
     }
 
     var storagePath: String {
-        "FluidAudio/Models/parakeet-tdt-0.6b-v3-coreml"
+        "FluidAudio/Models/nemotron-multilingual/\(variantDirectory)/1120ms"
     }
 
-    @MainActor
+    private var variantDirectory: String {
+        let language = Settings.shared.onDeviceLanguage.lowercased()
+        return ["en", "es", "fr", "it", "pt", "de"].contains { language.hasPrefix($0) } ? "latin" : "multilingual"
+    }
+
     func isDownloaded() async -> Bool {
-        #if canImport(FluidAudio)
-        // Check if model files exist WITHOUT triggering download
         let fileManager = FileManager.default
         guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             return false
         }
-
-        let modelPath = appSupportURL.appendingPathComponent(storagePath)
-
-        // Check if the model directory exists and contains required files
-        let configPath = modelPath.appendingPathComponent("config.json")
-        return fileManager.fileExists(atPath: configPath.path)
-        #else
-        return false
-        #endif
+        return fileManager.fileExists(atPath: appSupportURL.appendingPathComponent(storagePath).appendingPathComponent("metadata.json").path)
     }
 
-    @MainActor
     func download() async throws {
-        #if canImport(FluidAudio)
         let manager = ParakeetTranscriptionManager()
         try await manager.initializeModels()
-        #else
-        throw ModelDownloadError.platformNotSupported
-        #endif
     }
 }
 
@@ -143,8 +132,7 @@ class ModelDownloadManager {
     // MARK: - Model Registration
 
     private func registerModels() {
-        // Register Parakeet model
-        availableModels.append(ParakeetModel())
+        availableModels.append(NemotronModel())
 
         // Future: Register other models here
         // availableModels.append(AppleSpeechAnalyzerModel())

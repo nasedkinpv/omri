@@ -46,7 +46,7 @@ enum TranscriptionProvider: String, CaseIterable {
         case .apple:
             return ["On-Device Model"]
         case .parakeet:
-            return ["parakeet-tdt-v3"]
+            return ["nemotron-3.5-asr-streaming-multilingual-0.6b"]
         case .groq:
             return [
                 "whisper-large-v3-turbo",
@@ -91,6 +91,13 @@ enum TranscriptionProvider: String, CaseIterable {
 
     var isOnDevice: Bool {
         return self == .apple || self == .parakeet
+    }
+
+    var displayName: String {
+        switch self {
+        case .parakeet: return "Nemotron (On-Device)"
+        default: return rawValue
+        }
     }
 }
 
@@ -173,11 +180,6 @@ class Settings: ObservableObject {
                     Logger.log("Auto-selected model '\(transcriptionModel)' for provider '\(provider.rawValue)'", context: "Settings", level: .info)
                 }
 
-                // Disable VAD for Apple (it has built-in speech detection)
-                if provider == .apple && enableVAD {
-                    enableVAD = false
-                    Logger.log("Disabled VAD for Apple provider (has built-in speech detection)", context: "Settings", level: .info)
-                }
             }
         }
     }
@@ -211,6 +213,14 @@ class Settings: ObservableObject {
 
     @UserDefault("transcriptionLanguage", defaultValue: "")  // Empty for auto-detect
     var transcriptionLanguage: String {
+        didSet {
+            synchronizeChanges()
+            objectWillChange.send()
+        }
+    }
+
+    @UserDefault("onDeviceLanguage", defaultValue: "auto")
+    var onDeviceLanguage: String {
         didSet {
             synchronizeChanges()
             objectWillChange.send()
@@ -331,61 +341,6 @@ class Settings: ObservableObject {
     var startAtLogin: Bool {
         didSet {
             objectWillChange.send()
-        }
-    }
-
-    // MARK: - VAD Settings
-
-    @UserDefault("enableVAD", defaultValue: false)
-    var enableVAD: Bool {
-        didSet {
-            synchronizeChanges()
-            objectWillChange.send()
-        }
-    }
-
-    @UserDefault("vadSensitivity", defaultValue: 0.5)
-    var vadSensitivity: Double {
-        didSet {
-            synchronizeChanges()
-            objectWillChange.send()
-
-            // Update AudioManager with new VAD sensitivity (macOS only)
-            #if os(macOS)
-            Task { @MainActor in
-                AppDelegate.shared?.getAudioManager()?.updateVADSensitivity()
-            }
-            #endif
-        }
-    }
-
-    @UserDefault("vadMinSpeechDuration", defaultValue: 0.25)
-    var vadMinSpeechDuration: Double {
-        didSet {
-            synchronizeChanges()
-            objectWillChange.send()
-
-            // Update AudioManager with new VAD timing parameters (macOS only)
-            #if os(macOS)
-            Task { @MainActor in
-                AppDelegate.shared?.getAudioManager()?.updateVADTimingParameters()
-            }
-            #endif
-        }
-    }
-
-    @UserDefault("vadSilenceTimeout", defaultValue: 1.0)
-    var vadSilenceTimeout: Double {
-        didSet {
-            synchronizeChanges()
-            objectWillChange.send()
-
-            // Update AudioManager with new VAD timing parameters (macOS only)
-            #if os(macOS)
-            Task { @MainActor in
-                AppDelegate.shared?.getAudioManager()?.updateVADTimingParameters()
-            }
-            #endif
         }
     }
 

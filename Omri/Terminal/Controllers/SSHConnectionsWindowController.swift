@@ -8,7 +8,7 @@
 //  macOS window controller for SSH connections management
 //
 
-#if os(macOS)
+#if os(macOS) && SSH_TERMINAL  // SSH terminal lives on the `ssh` branch; gated out of main
 import Cocoa
 import SwiftUI
 

@@ -161,7 +161,7 @@ class AudioRecorder {
         return audioData
     }
 
-    /// Stop recording and get raw PCM buffers for on-device transcription (Parakeet)
+    /// Stop recording and get raw PCM buffers for on-device transcription
     /// Returns captured buffers and the recording format
     func stopRecordingAndGetBuffers() async -> ([AVAudioPCMBuffer], AVAudioFormat?) {
         guard isRecording else { return ([], nil) }
@@ -275,6 +275,9 @@ class AudioRecorder {
         }
 
         audioBuffers.append(optimizedBuffer)
+        Task { @MainActor in
+            delegate?.audioRecorder(didCaptureBuffer: optimizedBuffer)
+        }
 
         // Log progress every 50 buffers
         #if DEBUG

@@ -42,7 +42,7 @@ class PasteManager {
         let processedText = await processText(text, withAI: shouldUseAI)
 
         // Check if terminal window is active - send to terminal instead of pasting
-        #if os(macOS)
+        #if os(macOS) && SSH_TERMINAL
         if TerminalWindowController.shared.isTerminalActive {
             TerminalWindowController.shared.sendText(processedText)
             delegate?.pasteManagerDidFinishProcessing()
@@ -61,7 +61,7 @@ class PasteManager {
         let processedText = await processText(text, withAI: shouldUseAI)
 
         // Check if terminal window is active - send to terminal instead
-        #if os(macOS)
+        #if os(macOS) && SSH_TERMINAL
         if TerminalWindowController.shared.isTerminalActive {
             TerminalWindowController.shared.sendText(processedText)
             return
@@ -78,7 +78,7 @@ class PasteManager {
     func updateVolatileText(_ text: String) async {
         // For volatile text updates in terminal, just show the new text
         // (Terminal doesn't support volatile text replacement)
-        #if os(macOS)
+        #if os(macOS) && SSH_TERMINAL
         if TerminalWindowController.shared.isTerminalActive {
             // For terminal, we could implement a "preview" mode
             // For now, just log the volatile text without showing it
@@ -235,7 +235,7 @@ private extension PasteManager {
             return false
         }
 
-        let axElement = focusedElement as! AXUIElement
+        let axElement = unsafeBitCast(focusedElement!, to: AXUIElement.self)
 
         var isSettable: DarwinBoolean = false
         let settableResult = AXUIElementIsAttributeSettable(axElement, kAXValueAttribute as CFString, &isSettable)
@@ -262,10 +262,11 @@ private extension PasteManager {
 
         // Get focused element
         let focusResult = AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-        guard focusResult == .success, let axElement = focusedElement as! AXUIElement? else {
+        guard focusResult == .success, focusedElement != nil else {
             Logger.log("No focused UI element for native insertion", context: "Paste", level: .debug)
             return false
         }
+        let axElement = unsafeBitCast(focusedElement!, to: AXUIElement.self)
 
         // Get current text value
         var currentValue: AnyObject?
@@ -278,10 +279,11 @@ private extension PasteManager {
         // Get selected text range (cursor position)
         var rangeValue: AnyObject?
         let rangeResult = AXUIElementCopyAttributeValue(axElement, kAXSelectedTextRangeAttribute as CFString, &rangeValue)
-        guard rangeResult == .success, let axValue = rangeValue as! AXValue? else {
+        guard rangeResult == .success, rangeValue != nil else {
             Logger.log("Could not read selected text range", context: "Paste", level: .debug)
             return false
         }
+        let axValue = unsafeBitCast(rangeValue!, to: AXValue.self)
 
         // Extract CFRange from AXValue
         var range = CFRange(location: 0, length: 0)

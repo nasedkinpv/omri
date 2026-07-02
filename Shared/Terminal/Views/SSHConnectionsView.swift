@@ -398,6 +398,9 @@ struct SSHConnectionsView: View {
         #endif
     }
 
+}
+
+private extension SSHConnectionsView {
     // MARK: - Helper Methods
 
     private var isFormValid: Bool {
@@ -448,8 +451,8 @@ struct SSHConnectionsView: View {
     }
 
     private func connectTo(_ connection: SSHConnection) {
-        #if os(macOS)
-        // macOS: Open terminal window
+        #if os(macOS) && SSH_TERMINAL
+        // macOS: Open terminal window (SSH terminal lives on the `ssh` branch)
         TerminalWindowController.shared.connect(to: connection)
         #else
         // iOS: Use callback for navigation
