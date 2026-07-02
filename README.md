@@ -15,6 +15,7 @@ Native voice transcription for macOS and iOS. Use private on-device transcriptio
 - Hold `fn` → speak → release to paste text anywhere
 - Hold `fn + shift` to apply AI polish
 - Private on-device transcription with Nemotron 3.5 ASR
+- Text is pasted after you release `fn`
 - Apple SpeechAnalyzer support on macOS 26+
 - Cloud transcription with Groq, OpenAI, or a custom OpenAI-compatible endpoint
 - Menu bar app, no telemetry
