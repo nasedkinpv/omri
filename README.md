@@ -101,6 +101,7 @@ xcodebuild -project Omri.xcodeproj -scheme OmriiOS -sdk iphonesimulator build
 - API keys and SSH passwords are stored in Keychain.
 - No telemetry or tracking.
 - Temporary audio files are deleted after processing.
+- Accessibility permission (macOS) is used only to insert transcribed text at your cursor in the app you're using. Omri never reads screen contents; if declined, it falls back to copy and paste.
 
 ## License
 

@@ -128,6 +128,17 @@ struct AboutSettingsContent: View {
                     }
                 }
 
+                // Permissions
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Permissions")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+
+                    permissionsContent
+                }
+
                 // Acknowledgments
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Acknowledgments")
@@ -212,6 +223,42 @@ struct AboutSettingsContent: View {
             // Acknowledgments
             Section("Acknowledgments") {
                 acknowledgmentsContent
+            }
+        }
+    }
+
+    // MARK: - Permissions (macOS)
+
+    @ViewBuilder
+    private var permissionsContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            permissionRow(
+                icon: "mic.fill",
+                title: "Microphone",
+                detail: "Records your voice for transcription. Audio is processed on-device or sent only to the cloud provider you choose."
+            )
+            permissionRow(
+                icon: "keyboard",
+                title: "Accessibility",
+                detail: "Inserts transcribed text at your cursor in the app you're using, via the macOS Accessibility API. Omri never reads screen contents. If declined, it falls back to copy and paste."
+            )
+        }
+    }
+
+    private func permissionRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(.secondary)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
