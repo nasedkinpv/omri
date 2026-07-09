@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var sshConnectionsWindowController: SSHConnectionsWindowController?
     #endif
     private var downloadStatusMenuItem: NSMenuItem?  // For showing download progress
+    private let dictationHUD = DictationHUD()
 
     // Shared reference for accessing AudioManager from Settings
     static var shared: AppDelegate?
@@ -267,33 +268,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             if !granted {
                 Task { @MainActor in
-                    self.showPermissionAlert(for: "Microphone")
+                    self.showPermissionAlert(for: "Microphone", pane: .microphone)
                 }
             }
         }
 
-        // Also check accessibility permissions
-        let options =
-            [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: false] as CFDictionary
-        let accessibilityEnabled = AXIsProcessTrustedWithOptions(options)
-        if !accessibilityEnabled {
-            Task { @MainActor in
-                self.showPermissionAlert(for: "Accessibility")
-            }
-        }
-        // as Groq transcription uses the API and only microphone access is required locally.
+        // Input Monitoring for the fn key is requested by AudioManager via
+        // CGRequestListenEventAccess(), which shows the system prompt itself.
     }
 
     @objc private func checkPermissions() {
         let alert = NSAlert()
         alert.messageText = "Checking Permissions"
         alert.informativeText =
-            "Omri needs microphone and accessibility permissions to function properly."
+            "Omri needs microphone and input monitoring permissions to function properly."
 
         let micStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.audio) == .authorized
-        let accessibilityStatus = AXIsProcessTrustedWithOptions(nil as CFDictionary?)
+        let inputMonitoringStatus = CGPreflightListenEventAccess()
 
-        if micStatus && accessibilityStatus {
+        if micStatus && inputMonitoringStatus {
             alert.messageText = "All Permissions Granted"
             alert.informativeText = "Omri has all required permissions."
         } else {
@@ -302,7 +295,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 Omri requires the following permissions:
 
                 Microphone: \(micStatus ? "Granted" : "Missing")
-                Accessibility: \(accessibilityStatus ? "Granted" : "Missing")
+                Input Monitoring: \(inputMonitoringStatus ? "Granted" : "Missing")
 
                 Please grant the missing permissions in System Settings.
                 """
@@ -311,7 +304,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.addButton(withTitle: "Cancel")
 
             if alert.runModal() == .alertFirstButtonReturn {
-                openSystemSettings()
+                openPrivacySettings(micStatus ? .inputMonitoring : .microphone)
             }
             return
         }
@@ -338,23 +331,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return tintedImage
     }
     
-    private func openSystemSettings() {
-        // For Microphone
-        if let micURL = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
-        {
-            NSWorkspace.shared.open(micURL)
-        }
-
-        // For Accessibility
-        if let accessibilityURL = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-        {
-            NSWorkspace.shared.open(accessibilityURL)
-        }
+    /// Anchors into System Settings > Privacy & Security. Opening one pane at a time matters:
+    /// consecutive opens race and the last one wins, and the bare scheme lands on whatever
+    /// page was open last.
+    private enum PrivacyPane: String {
+        case microphone = "Privacy_Microphone"
+        case inputMonitoring = "Privacy_ListenEvent"
     }
 
-    private func showPermissionAlert(for permission: String) {
+    private func openPrivacySettings(_ pane: PrivacyPane) {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane.rawValue)")!
+        NSWorkspace.shared.open(url)
+    }
+
+    private func showPermissionAlert(for permission: String, pane: PrivacyPane) {
         DispatchQueue.main.async {
             let alert = NSAlert()
             alert.messageText = "\(permission) Access Required"
@@ -365,7 +355,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.addButton(withTitle: "Cancel")
 
             if alert.runModal() == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:")!)
+                self.openPrivacySettings(pane)
             }
         }
     }
@@ -383,6 +373,7 @@ extension AppDelegate: AudioManagerDelegate {
     func audioManagerDidStartRecording() {
         // Recording state: primary glyph.
         self.statusItem.button?.image = tintedStatusIcon(color: brandPrimary)
+        dictationHUD.showRecording()
     }
 
     func audioManagerDidStopRecording() {
@@ -393,11 +384,13 @@ extension AppDelegate: AudioManagerDelegate {
     func audioManagerWillStartNetworkProcessing() {
         // Processing state: secondary glyph.
         self.statusItem.button?.image = tintedStatusIcon(color: brandSecondary)
+        dictationHUD.showProcessing()
     }
 
     func audioManager(didReceiveError error: Error) {
         // Return to standard macOS template icon on error
         self.statusItem.button?.image = createMenuBarIcon(named: defaultIcon)
+        dictationHUD.hide()
 
         // For better UX, use non-intrusive error handling instead of modal alerts
         let errorMessage: String
@@ -471,12 +464,20 @@ extension AppDelegate: AudioManagerDelegate {
 extension AppDelegate: PasteManagerDelegate {
     func pasteManagerWillStartProcessing() {
         // No longer setting icon here, AudioManagerDelegate handles start
-        Logger.log("pasteManagerWillStartProcessing - (Icon setting moved)", context: "App", level: .debug)
+        dictationHUD.showProcessing()
     }
 
     func pasteManagerWillStartTransformation() {
         // AI transformation state: secondary glyph.
         self.statusItem.button?.image = tintedStatusIcon(color: brandSecondary)
+    }
+
+    func pasteManager(didUpdateVolatileText text: String) {
+        dictationHUD.showVolatileText(text)
+    }
+
+    func pasteManager(didDeliver text: String, inserted: Bool) {
+        dictationHUD.showResult(text, pasteHint: !inserted)
     }
 
     func pasteManagerDidFinishProcessing() {

@@ -20,7 +20,6 @@ struct SettingsView: View {
     @State private var showingApiKeySheet = false
     @State private var currentProvider: String = ""
     @State private var apiKeyInput = ""
-    @State private var showingPermissionsAlert = false
     @State private var selectedTab: SettingsTab = .dictation
 
     enum SettingsTab: String, CaseIterable {
@@ -69,12 +68,6 @@ struct SettingsView: View {
                 saveApiKey()
             }
         }
-        .alert("System Access Required", isPresented: $showingPermissionsAlert) {
-            Button("Open System Settings") { openSystemSettings() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(permissionStatus())
-        }
     }
 
     // MARK: - Helper Methods
@@ -91,30 +84,6 @@ struct SettingsView: View {
         apiKeyInput = ""
     }
 
-    private func permissionStatus() -> String {
-        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
-        let accessibilityStatus: Bool = {
-            let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: false] as CFDictionary
-            return AXIsProcessTrustedWithOptions(options)
-        }()
-
-        if micStatus && accessibilityStatus {
-            return "All permissions granted. Omri is ready to use."
-        } else {
-            return """
-            Omri requires additional system access:
-
-            Microphone: \(micStatus ? "Granted" : "Required")
-            Accessibility: \(accessibilityStatus ? "Granted" : "Required")
-
-            These permissions enable voice recording and seamless text insertion.
-            """
-        }
-    }
-
-    private func openSystemSettings() {
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security")!)
-    }
 }
 
 // MARK: - Settings Window Controller

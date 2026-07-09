@@ -27,7 +27,7 @@ class AudioManager {
     nonisolated(unsafe) private var audioBuffers: [AVAudioPCMBuffer] = []  // Accessed from audio thread
     private let expectedBufferCount = 50  // Pre-allocate for ~1-2 seconds of audio
     nonisolated(unsafe) private var recordingFormat: AVAudioFormat?  // Accessed from audio thread for conversion
-    private var monitor: Any?
+    private var eventTap: CFMachPort?
 
     // Apple SpeechAnalyzer Integration (macOS 26.0+)
     // Protocol-based approach eliminates type erasure while maintaining availability checking
@@ -72,8 +72,8 @@ class AudioManager {
     }
 
     deinit {
-        if let monitor = monitor {
-            NSEvent.removeMonitor(monitor)
+        if let eventTap {
+            CFMachPortInvalidate(eventTap)
         }
         // Ensure engine is stopped properly - remove tap before stopping
         if audioEngine.isRunning {
@@ -83,21 +83,57 @@ class AudioManager {
     }
 
 
+    /// Listens for fn/shift via a listen-only CGEventTap, which needs the Input Monitoring
+    /// privilege rather than Accessibility. NSEvent's global monitor would require
+    /// Accessibility, which sandboxed and Mac App Store apps may not use.
     private func setupKeyboardMonitoring() {
-        NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
-            self?.handleKeyFlags(event)
-            return event
+        guard CGPreflightListenEventAccess() else {
+            Logger.log("Input Monitoring not granted, requesting", context: "Audio", level: .warning)
+            CGRequestListenEventAccess()
+            return
         }
 
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) {
-            [weak self] event in
-            self?.handleKeyFlags(event)
+        let callback: CGEventTapCallBack = { proxy, type, event, userInfo in
+            guard let userInfo else { return Unmanaged.passUnretained(event) }
+            let manager = Unmanaged<AudioManager>.fromOpaque(userInfo).takeUnretainedValue()
+
+            if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                MainActor.assumeIsolated { manager.reenableEventTap() }
+            } else {
+                let flags = event.flags
+                MainActor.assumeIsolated { manager.handleKeyFlags(flags) }
+            }
+            return Unmanaged.passUnretained(event)
         }
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: CGEventMask(1 << CGEventType.flagsChanged.rawValue),
+            callback: callback,
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) else {
+            Logger.log("Failed to create event tap for fn key", context: "Audio", level: .error)
+            return
+        }
+
+        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+        eventTap = tap
+        Logger.log("Listening for fn key via event tap", context: "Audio", level: .info)
     }
 
-    private func handleKeyFlags(_ event: NSEvent) {
-        let isFnPressed = event.modifierFlags.contains(.function)
-        let isShiftPressed = event.modifierFlags.contains(.shift)
+    private func reenableEventTap() {
+        guard let eventTap else { return }
+        Logger.log("Event tap disabled by system, re-enabling", context: "Audio", level: .warning)
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+    }
+
+    private func handleKeyFlags(_ flags: CGEventFlags) {
+        let isFnPressed = flags.contains(.maskSecondaryFn)
+        let isShiftPressed = flags.contains(.maskShift)
 
         if isFnPressed != self.isFnKeyPressed {
             self.isFnKeyPressed = isFnPressed

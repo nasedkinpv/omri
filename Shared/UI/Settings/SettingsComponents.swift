@@ -33,8 +33,12 @@ struct OmriIcon: View {
     }
 
     var body: some View {
+        // Fitted to a square rather than sized by font: wide glyphs like `keyboard.fill`
+        // otherwise tower over narrow ones like `mic.fill` at the same point size.
         Image(systemName: name)
-            .font(.system(size: size))
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
             .foregroundStyle(foregroundStyle)
             .symbolRenderingMode(.hierarchical)
     }
@@ -123,8 +127,8 @@ struct FeatureRow: View {
     let style: OmriIcon.IconStyle
 
     var body: some View {
-        HStack(spacing: 12) {
-            OmriIcon(name: icon, size: 20, style: style)
+        HStack(alignment: .top, spacing: 12) {
+            OmriIcon(name: icon, size: 18, style: style)
                 .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -205,7 +209,10 @@ struct SettingsSectionFooter: View {
 #if os(macOS)
 struct SystemPermissionStatusView: View {
     @State private var microphoneGranted = false
+    @State private var inputMonitoringGranted = false
+    #if !MAS_BUILD
     @State private var accessibilityGranted = false
+    #endif
 
     @Environment(\.horizontalSizeClass) var sizeClass
 
@@ -216,34 +223,36 @@ struct SystemPermissionStatusView: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(microphoneGranted ? Color("BrandSecondary") : Color("BrandError"))
-                    .frame(width: circleSize, height: circleSize)
-                Text("Microphone")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(accessibilityGranted ? Color("BrandSecondary") : Color("BrandError"))
-                    .frame(width: circleSize, height: circleSize)
-                Text("Accessibility")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            statusRow("Microphone", granted: microphoneGranted)
+            statusRow("Input Monitoring", granted: inputMonitoringGranted)
+            #if !MAS_BUILD
+            statusRow("Accessibility", granted: accessibilityGranted)
+            #endif
         }
         .onAppear {
             checkPermissions()
         }
     }
 
+    private func statusRow(_ title: String, granted: Bool) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(granted ? Color("BrandSecondary") : Color("BrandError"))
+                .frame(width: circleSize, height: circleSize)
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
     private func checkPermissions() {
         microphoneGranted = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        inputMonitoringGranted = CGPreflightListenEventAccess()
 
+        #if !MAS_BUILD
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: false] as CFDictionary
         accessibilityGranted = AXIsProcessTrustedWithOptions(options)
+        #endif
     }
 }
 #else

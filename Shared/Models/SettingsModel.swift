@@ -344,6 +344,15 @@ class Settings: ObservableObject {
         }
     }
 
+    /// Insert the transcript into the frontmost app instead of only copying it.
+    /// Ignored by the Mac App Store build, which has no way to insert text.
+    @UserDefault("automaticPaste", defaultValue: true)
+    var automaticPaste: Bool {
+        didSet {
+            objectWillChange.send()
+        }
+    }
+
     // MARK: - API Key Management (Keychain-based)
 
     func apiKey<T>(for provider: T) -> String? where T: RawRepresentable, T.RawValue == String {

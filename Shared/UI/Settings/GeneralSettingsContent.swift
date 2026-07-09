@@ -40,6 +40,15 @@ struct GeneralSettingsContent: View {
                     SettingsSectionHeader(title:"App Behavior")
 
                     Toggle("Launch Omri at startup", isOn: $settings.startAtLogin)
+
+                    #if MAS_BUILD
+                    Toggle("Insert transcript into the active app", isOn: .constant(false))
+                        .disabled(true)
+                    SettingsSectionFooter(text: "The App Store version copies the transcript to the clipboard. Press \u{2318}V to paste it. Dictation into Omri's own terminal still inserts directly.")
+                    #else
+                    Toggle("Insert transcript into the active app", isOn: $settings.automaticPaste)
+                    SettingsSectionFooter(text: "Requires Accessibility permission. When off, the transcript is copied to the clipboard instead.")
+                    #endif
                 }
 
                 // System Integration
@@ -60,7 +69,7 @@ struct GeneralSettingsContent: View {
                         SystemPermissionStatusView()
                     }
 
-                    SettingsSectionFooter(text:"Microphone access enables voice recording. Accessibility permission allows Omri to insert text into any app.")
+                    SettingsSectionFooter(text:"Microphone access enables voice recording. Input Monitoring lets Omri see the fn key while other apps are focused.")
                 }
 
                 // Storage Management

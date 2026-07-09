@@ -19,6 +19,11 @@ protocol PasteManagerDelegate: AnyObject {
     func pasteManagerWillStartProcessing()
     func pasteManagerWillStartTransformation()  // New method for AI transformation phase
     func pasteManagerDidFinishProcessing()
+
+    /// In-progress transcript from streaming providers; replaced on every update.
+    func pasteManager(didUpdateVolatileText text: String)
+    /// Final transcript. `inserted` is false when the text was only put on the clipboard.
+    func pasteManager(didDeliver text: String, inserted: Bool)
 }
 
 @MainActor
@@ -51,25 +56,9 @@ class PasteManager {
         #endif
 
         copyToClipboard(processedText)
-        performPaste()  // Paste immediately after clipboard copy
+        let inserted = deliverToFrontmostApp()
+        delegate?.pasteManager(didDeliver: processedText, inserted: inserted)
         delegate?.pasteManagerDidFinishProcessing()
-    }
-
-    func appendStreamingText(_ text: String, withAI: Bool = true) async {
-        // For streaming, process AI transformation if needed but don't notify start/finish
-        let shouldUseAI = withAI && Settings.shared.enableAIProcessing
-        let processedText = await processText(text, withAI: shouldUseAI)
-
-        // Check if terminal window is active - send to terminal instead
-        #if os(macOS) && SSH_TERMINAL
-        if TerminalWindowController.shared.isTerminalActive {
-            TerminalWindowController.shared.sendText(processedText)
-            return
-        }
-        #endif
-
-        // Append to existing text instead of replacing
-        appendTextToCurrentPosition(processedText)
     }
 
     /// Update volatile (in-progress) text that may change
@@ -87,13 +76,9 @@ class PasteManager {
         }
         #endif
 
-        // For normal text fields, volatile text handling could be more sophisticated
-        // For now, log for debugging - in a full implementation, we could:
-        // - Track volatile text range and replace it when confirmed
-        // - Use a different visual style (e.g., grayed out text)
-        Logger.log("Volatile text: '\(text)'", context: "Paste", level: .debug)
-        // Note: We don't show volatile text to avoid flickering
-        // Confirmed text is shown via appendStreamingText
+        // Volatile text is never inserted into the target app — it changes as the model
+        // refines it. It is only shown in the overlay.
+        delegate?.pasteManager(didUpdateVolatileText: text)
     }
 
 }
@@ -169,6 +154,24 @@ private extension PasteManager {
         Logger.log("Copied to clipboard (\(text.count) chars, success: \(success))", context: "Paste", level: .debug)
     }
 
+    /// The text is already on the clipboard by this point. Automatic insertion needs the
+    /// Accessibility permission, which App Store apps may not use for this purpose
+    /// (App Review guideline 2.4.5), so the MAS build always leaves the paste to the user.
+    /// Returns whether insertion was attempted.
+    func deliverToFrontmostApp() -> Bool {
+        #if !MAS_BUILD
+        if Settings.shared.automaticPaste {
+            performPaste()
+            return true
+        }
+        #endif
+        return false
+    }
+}
+
+#if !MAS_BUILD
+// MARK: - Automatic Insertion (direct distribution only)
+private extension PasteManager {
     func performPaste() {
         if !hasAccessibilityPermissions() {
             Logger.log("No accessibility permissions - using Cmd+V fallback (restart app after granting permissions)", context: "Paste", level: .warning)
@@ -185,21 +188,6 @@ private extension PasteManager {
         }
     }
 
-    func appendTextToCurrentPosition(_ text: String) {
-        if hasAccessibilityPermissions() {
-            // Try native insertion first (more precise, preserves clipboard)
-            if tryNativeStreamingInsertion(text) {
-                Logger.log("Native streaming insertion succeeded", context: "Paste", level: .info)
-                return
-            }
-        }
-
-        // Fall back to clipboard + Cmd+V approach (works even without accessibility)
-        Logger.log("Streaming insertion using Cmd+V fallback", context: "Paste", level: .debug)
-        copyToClipboard(text)
-        tryFallbackPaste()
-    }
-    
     func hasAccessibilityPermissions() -> Bool {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         return AXIsProcessTrustedWithOptions(options as CFDictionary)
@@ -251,89 +239,6 @@ private extension PasteManager {
         return setResult == .success
     }
     
-    func tryNativeStreamingInsertion(_ text: String) -> Bool {
-        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier as Int32? else {
-            Logger.log("Could not get frontmost application PID", context: "Paste", level: .error)
-            return false
-        }
-
-        let appElement = AXUIElementCreateApplication(pid)
-        var focusedElement: AnyObject?
-
-        // Get focused element
-        let focusResult = AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-        guard focusResult == .success, focusedElement != nil else {
-            Logger.log("No focused UI element for native insertion", context: "Paste", level: .debug)
-            return false
-        }
-        let axElement = unsafeBitCast(focusedElement!, to: AXUIElement.self)
-
-        // Get current text value
-        var currentValue: AnyObject?
-        let valueResult = AXUIElementCopyAttributeValue(axElement, kAXValueAttribute as CFString, &currentValue)
-        guard valueResult == .success, let currentText = currentValue as? String else {
-            Logger.log("Could not read current text value", context: "Paste", level: .debug)
-            return false
-        }
-
-        // Get selected text range (cursor position)
-        var rangeValue: AnyObject?
-        let rangeResult = AXUIElementCopyAttributeValue(axElement, kAXSelectedTextRangeAttribute as CFString, &rangeValue)
-        guard rangeResult == .success, rangeValue != nil else {
-            Logger.log("Could not read selected text range", context: "Paste", level: .debug)
-            return false
-        }
-        let axValue = unsafeBitCast(rangeValue!, to: AXValue.self)
-
-        // Extract CFRange from AXValue
-        var range = CFRange(location: 0, length: 0)
-        guard AXValueGetValue(axValue, .cfRange, &range) else {
-            Logger.log("Could not extract CFRange from AXValue", context: "Paste", level: .debug)
-            return false
-        }
-
-        // Calculate insertion position
-        let insertPosition = range.location
-
-        // Validate insertion position
-        guard insertPosition >= 0 && insertPosition <= currentText.count else {
-            Logger.log("Invalid insertion position \(insertPosition) for text length \(currentText.count)", context: "Paste", level: .error)
-            return false
-        }
-
-        // Insert text at cursor position
-        let index = currentText.index(currentText.startIndex, offsetBy: insertPosition)
-        let newText = String(currentText.prefix(upTo: index)) + text + String(currentText.suffix(from: index))
-
-        // Write new text value
-        let setValueResult = AXUIElementSetAttributeValue(axElement, kAXValueAttribute as CFString, newText as CFTypeRef)
-        guard setValueResult == .success else {
-            Logger.log("Failed to set new text value (result: \(setValueResult.rawValue))", context: "Paste", level: .warning)
-            return false
-        }
-
-        // Update cursor position to after inserted text
-        let newCursorPosition = insertPosition + text.count
-        var newRange = CFRange(location: newCursorPosition, length: 0)
-
-        // Create AXValue from CFRange
-        guard let newRangeValue = AXValueCreate(.cfRange, &newRange) else {
-            Logger.log("Warning - could not create AXValue for new cursor position", context: "Paste", level: .warning)
-            // Still return true because text was inserted successfully
-            return true
-        }
-
-        let setRangeResult = AXUIElementSetAttributeValue(axElement, kAXSelectedTextRangeAttribute as CFString, newRangeValue)
-
-        if setRangeResult != .success {
-            Logger.log("Warning - cursor position not updated (result: \(setRangeResult.rawValue))", context: "Paste", level: .warning)
-            // Still return true because text was inserted successfully
-        }
-
-        Logger.log("Native insertion - inserted \(text.count) chars at position \(insertPosition)", context: "Paste", level: .debug)
-        return true
-    }
-
     func tryFallbackPaste() {
         Logger.log("Simulating Cmd+V keypress", context: "Paste", level: .debug)
         let source = CGEventSource(stateID: .combinedSessionState)
@@ -348,6 +253,7 @@ private extension PasteManager {
         Logger.log("Cmd+V posted", context: "Paste", level: .debug)
     }
 }
+#endif
 
 // MARK: - Helpers
 private extension PasteManager {

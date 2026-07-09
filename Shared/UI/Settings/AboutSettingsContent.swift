@@ -64,7 +64,7 @@ struct AboutSettingsContent: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .gridColumnAlignment(.trailing)
-                            Text("macOS 15.0 or later")
+                            Text("macOS 26.0 or later")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         }
@@ -121,10 +121,10 @@ struct AboutSettingsContent: View {
                         .tracking(0.5)
 
                     VStack(spacing: 16) {
-                        FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .brand)
+                        FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .monochrome)
                         FeatureRow(icon: "globe.americas.fill", title: "Translation", description: "Translate speech from any language to English", style: .monochrome)
-                        FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .brand)
-                        FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any Mac application", style: .system)
+                        FeatureRow(icon: "sparkles", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .monochrome)
+                        FeatureRow(icon: "square.grid.2x2.fill", title: "System Integration", description: "Works seamlessly with any Mac application", style: .monochrome)
                     }
                 }
 
@@ -214,10 +214,10 @@ struct AboutSettingsContent: View {
 
             // Features Overview
             Section("Features") {
-                FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .brand)
+                FeatureRow(icon: "mic.fill", title: "Voice Dictation", description: "Convert speech to text with multiple language support", style: .monochrome)
                 FeatureRow(icon: "globe.americas.fill", title: "Translation", description: "Translate speech from any language to English", style: .monochrome)
-                FeatureRow(icon: "wand.and.stars.inverse", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .brand)
-                FeatureRow(icon: "keyboard", title: "System Integration", description: "Works seamlessly with any iOS application", style: .system)
+                FeatureRow(icon: "sparkles", title: "AI Enhancement", description: "Intelligent text formatting and style improvement", style: .monochrome)
+                FeatureRow(icon: "square.grid.2x2.fill", title: "System Integration", description: "Works seamlessly with any iOS application", style: .monochrome)
             }
 
             // Acknowledgments
@@ -231,37 +231,30 @@ struct AboutSettingsContent: View {
 
     @ViewBuilder
     private var permissionsContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            permissionRow(
+        VStack(alignment: .leading, spacing: 16) {
+            FeatureRow(
                 icon: "mic.fill",
                 title: "Microphone",
-                detail: "Records your voice for transcription. Audio is processed on-device or sent only to the cloud provider you choose."
+                description: "Records your voice for transcription. Audio is processed on-device or sent only to the cloud provider you choose.",
+                style: .monochrome
             )
-            permissionRow(
-                icon: "keyboard",
+            FeatureRow(
+                icon: "keyboard.fill",
+                title: "Input Monitoring",
+                description: "Detects the fn key while another app is focused, so you can start dictating without switching to Omri. Only modifier keys are read; keystrokes are never recorded.",
+                style: .monochrome
+            )
+            #if !MAS_BUILD
+            FeatureRow(
+                icon: "doc.on.clipboard.fill",
                 title: "Accessibility",
-                detail: "Inserts transcribed text at your cursor in the app you're using, via the macOS Accessibility API. Omri never reads screen contents. If declined, it falls back to copy and paste."
+                description: "Inserts transcribed text at your cursor in the app you're using. Omri never reads screen contents. If declined, the transcript is copied to the clipboard instead.",
+                style: .monochrome
             )
+            #endif
         }
     }
 
-    private func permissionRow(icon: String, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(.secondary)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
 
     // MARK: - Acknowledgments (shared)
 
@@ -273,6 +266,13 @@ struct AboutSettingsContent: View {
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            #if os(macOS)
+            Text("The dictation overlay is built with DynamicNotchKit by Kai Azim (MIT).")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            #endif
+
             HStack(spacing: 16) {
                 Button("OpenMDW-1.1 License") {
                     openURL("https://openmdw.ai/license/1-1/")
@@ -283,6 +283,11 @@ struct AboutSettingsContent: View {
                 Button("FluidAudio") {
                     openURL("https://github.com/FluidInference/FluidAudio")
                 }
+                #if os(macOS)
+                Button("DynamicNotchKit") {
+                    openURL("https://github.com/MrKai77/DynamicNotchKit")
+                }
+                #endif
             }
             .font(.caption)
             .fontWeight(.medium)
