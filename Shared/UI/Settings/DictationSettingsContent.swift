@@ -177,24 +177,24 @@ struct DictationSettingsContent: View {
                 VStack(alignment: .leading, spacing: 16) {
                     SettingsSectionHeader(title: "Keyboard Shortcuts")
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 12) {
-                            GridRow {
-                                Text("Dictate")
-                                    .gridColumnAlignment(.leading)
-                                KeyboardShortcuts.Recorder(for: .dictate)
-                            }
-                            GridRow {
-                                Text("Dictate with AI")
-                                KeyboardShortcuts.Recorder(for: .dictateWithAI)
-                            }
+                    Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 20, verticalSpacing: 12) {
+                        GridRow {
+                            Text("Dictate")
+                                .gridColumnAlignment(.trailing)
+                            KeyboardShortcuts.Recorder(for: .dictate)
+                                .fixedSize()
                         }
-
-                        SettingsSectionFooter(text: "Hold a shortcut to record; release to transcribe. \u{201C}Dictate with AI\u{201D} also applies text processing.")
+                        GridRow {
+                            Text("Dictate with AI")
+                            KeyboardShortcuts.Recorder(for: .dictateWithAI)
+                                .fixedSize()
+                        }
                     }
 
-                    #if !MAS_BUILD
-                    SettingsSectionFooter(text: "You can also hold the fn key (requires Input Monitoring).")
+                    #if MAS_BUILD
+                    SettingsSectionFooter(text: "Hold a shortcut to record, then release to transcribe. \u{201C}Dictate with AI\u{201D} also applies text processing.")
+                    #else
+                    SettingsSectionFooter(text: "Hold a shortcut to record, then release to transcribe. \u{201C}Dictate with AI\u{201D} also applies text processing. You can also hold the fn key (requires Input Monitoring).")
                     #endif
                 }
             }

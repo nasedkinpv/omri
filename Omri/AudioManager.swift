@@ -9,7 +9,6 @@
 //
 
 @preconcurrency import AVFoundation
-import Carbon.HIToolbox
 import Cocoa
 import KeyboardShortcuts
 import Speech
