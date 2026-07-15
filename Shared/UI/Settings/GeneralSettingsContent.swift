@@ -44,7 +44,7 @@ struct GeneralSettingsContent: View {
                     #if MAS_BUILD
                     Toggle("Insert transcript into the active app", isOn: .constant(false))
                         .disabled(true)
-                    SettingsSectionFooter(text: "The App Store version copies the transcript to the clipboard. Press \u{2318}V to paste it. Dictation into Omri's own terminal still inserts directly.")
+                    SettingsSectionFooter(text: "The App Store version copies the transcript to the clipboard. Press \u{2318}V to paste it.")
                     #else
                     Toggle("Insert transcript into the active app", isOn: $settings.automaticPaste)
                     SettingsSectionFooter(text: "Requires Accessibility permission. When off, the transcript is copied to the clipboard instead.")
@@ -59,7 +59,7 @@ struct GeneralSettingsContent: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("System Permissions")
                                 .font(.headline)
-                            Text("Required for voice input and text insertion")
+                            Text("Required for voice input")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -69,7 +69,11 @@ struct GeneralSettingsContent: View {
                         SystemPermissionStatusView()
                     }
 
+                    #if MAS_BUILD
+                    SettingsSectionFooter(text:"Microphone access enables voice recording. Press \u{2325}Space to dictate; the hotkey needs no extra permission.")
+                    #else
                     SettingsSectionFooter(text:"Microphone access enables voice recording. Input Monitoring lets Omri see the fn key while other apps are focused.")
+                    #endif
                 }
 
                 // Storage Management

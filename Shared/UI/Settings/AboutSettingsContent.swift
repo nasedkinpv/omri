@@ -238,13 +238,13 @@ struct AboutSettingsContent: View {
                 description: "Records your voice for transcription. Audio is processed on-device or sent only to the cloud provider you choose.",
                 style: .monochrome
             )
+            #if !MAS_BUILD
             FeatureRow(
                 icon: "keyboard.fill",
                 title: "Input Monitoring",
-                description: "Detects the fn key while another app is focused, so you can start dictating without switching to Omri. Only modifier keys are read; keystrokes are never recorded.",
+                description: "Optional. Lets you hold the fn key to dictate while another app is focused. Only modifier keys are read; keystrokes are never recorded.",
                 style: .monochrome
             )
-            #if !MAS_BUILD
             FeatureRow(
                 icon: "doc.on.clipboard.fill",
                 title: "Accessibility",

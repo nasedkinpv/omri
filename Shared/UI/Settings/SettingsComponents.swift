@@ -209,8 +209,8 @@ struct SettingsSectionFooter: View {
 #if os(macOS)
 struct SystemPermissionStatusView: View {
     @State private var microphoneGranted = false
-    @State private var inputMonitoringGranted = false
     #if !MAS_BUILD
+    @State private var inputMonitoringGranted = false
     @State private var accessibilityGranted = false
     #endif
 
@@ -224,8 +224,8 @@ struct SystemPermissionStatusView: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
             statusRow("Microphone", granted: microphoneGranted)
-            statusRow("Input Monitoring", granted: inputMonitoringGranted)
             #if !MAS_BUILD
+            statusRow("Input Monitoring", granted: inputMonitoringGranted)
             statusRow("Accessibility", granted: accessibilityGranted)
             #endif
         }
@@ -247,9 +247,9 @@ struct SystemPermissionStatusView: View {
 
     private func checkPermissions() {
         microphoneGranted = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
-        inputMonitoringGranted = CGPreflightListenEventAccess()
 
         #if !MAS_BUILD
+        inputMonitoringGranted = CGPreflightListenEventAccess()
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: false] as CFDictionary
         accessibilityGranted = AXIsProcessTrustedWithOptions(options)
         #endif

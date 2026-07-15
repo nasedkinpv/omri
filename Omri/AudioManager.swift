@@ -9,6 +9,7 @@
 //
 
 @preconcurrency import AVFoundation
+import Carbon.HIToolbox
 import Cocoa
 import Speech
 import UserNotifications
@@ -27,7 +28,10 @@ class AudioManager {
     nonisolated(unsafe) private var audioBuffers: [AVAudioPCMBuffer] = []  // Accessed from audio thread
     private let expectedBufferCount = 50  // Pre-allocate for ~1-2 seconds of audio
     nonisolated(unsafe) private var recordingFormat: AVAudioFormat?  // Accessed from audio thread for conversion
+    private var globalHotKey: GlobalHotKey?
+    #if !MAS_BUILD
     private var eventTap: CFMachPort?
+    #endif
 
     // Apple SpeechAnalyzer Integration (macOS 26.0+)
     // Protocol-based approach eliminates type erasure while maintaining availability checking
@@ -72,9 +76,11 @@ class AudioManager {
     }
 
     deinit {
+        #if !MAS_BUILD
         if let eventTap {
             CFMachPortInvalidate(eventTap)
         }
+        #endif
         // Ensure engine is stopped properly - remove tap before stopping
         if audioEngine.isRunning {
             audioEngine.inputNode.removeTap(onBus: 0)
@@ -83,10 +89,37 @@ class AudioManager {
     }
 
 
-    /// Listens for fn/shift via a listen-only CGEventTap, which needs the Input Monitoring
-    /// privilege rather than Accessibility. NSEvent's global monitor would require
-    /// Accessibility, which sandboxed and Mac App Store apps may not use.
     private func setupKeyboardMonitoring() {
+        // Press-to-talk via a permission-free Carbon hotkey (default ⌥Space). Works in the
+        // App Store sandbox. Shift state is read from NSEvent.modifierFlags at press time,
+        // which needs no monitoring permission, preserving the "hold shift for AI" gesture.
+        globalHotKey = GlobalHotKey(
+            keyCode: UInt32(kVK_Space),
+            modifiers: UInt32(optionKey),
+            onPress: { [weak self] in self?.hotKeyPressed() },
+            onRelease: { [weak self] in self?.hotKeyReleased() }
+        )
+
+        #if !MAS_BUILD
+        // Direct-distribution builds additionally support holding fn. This needs Input
+        // Monitoring, which the App Store forbids (guideline 2.4.5(v)), so it is compiled out.
+        setupFnKeyMonitoring()
+        #endif
+    }
+
+    private func hotKeyPressed() {
+        guard !isRecording && !hasPendingPaste else { return }
+        wasShiftPressedOnStart = NSEvent.modifierFlags.contains(.shift)
+        startRecording()
+    }
+
+    private func hotKeyReleased() {
+        if isRecording { stopRecording() }
+    }
+
+    #if !MAS_BUILD
+    /// Listens for fn/shift via a listen-only CGEventTap (Input Monitoring). Direct builds only.
+    private func setupFnKeyMonitoring() {
         guard CGPreflightListenEventAccess() else {
             Logger.log("Input Monitoring not granted, requesting", context: "Audio", level: .warning)
             CGRequestListenEventAccess()
@@ -152,6 +185,7 @@ class AudioManager {
 
         self.isShiftKeyPressed = isShiftPressed
     }
+    #endif
 
     // Public method to manually trigger recording (for dictation button)
     func startRecording() {

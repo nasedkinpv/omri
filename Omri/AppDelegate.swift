@@ -273,17 +273,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Input Monitoring for the fn key is requested by AudioManager via
-        // CGRequestListenEventAccess(), which shows the system prompt itself.
+        // The global hotkey needs no permission. In direct builds the fn fallback requests
+        // Input Monitoring from AudioManager via CGRequestListenEventAccess() when needed.
     }
 
     @objc private func checkPermissions() {
         let alert = NSAlert()
-        alert.messageText = "Checking Permissions"
-        alert.informativeText =
-            "Omri needs microphone and input monitoring permissions to function properly."
-
         let micStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.audio) == .authorized
+
+        #if MAS_BUILD
+        // The App Store build uses only the microphone; the hotkey is permission-free.
+        if micStatus {
+            alert.messageText = "All Permissions Granted"
+            alert.informativeText = "Omri has all required permissions."
+        } else {
+            alert.messageText = "Microphone Access Required"
+            alert.informativeText = "Omri needs microphone access to record your voice. Grant it in System Settings."
+            alert.addButton(withTitle: "Open System Settings")
+            alert.addButton(withTitle: "Cancel")
+            if alert.runModal() == .alertFirstButtonReturn {
+                openPrivacySettings(.microphone)
+            }
+            return
+        }
+        #else
         let inputMonitoringStatus = CGPreflightListenEventAccess()
 
         if micStatus && inputMonitoringStatus {
@@ -308,6 +321,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             return
         }
+        #endif
 
         alert.runModal()
     }
