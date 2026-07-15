@@ -11,6 +11,7 @@
 @preconcurrency import AVFoundation
 import Carbon.HIToolbox
 import Cocoa
+import KeyboardShortcuts
 import Speech
 import UserNotifications
 
@@ -28,7 +29,6 @@ class AudioManager {
     nonisolated(unsafe) private var audioBuffers: [AVAudioPCMBuffer] = []  // Accessed from audio thread
     private let expectedBufferCount = 50  // Pre-allocate for ~1-2 seconds of audio
     nonisolated(unsafe) private var recordingFormat: AVAudioFormat?  // Accessed from audio thread for conversion
-    private var globalHotKey: GlobalHotKey?
     #if !MAS_BUILD
     private var eventTap: CFMachPort?
     #endif
@@ -90,15 +90,13 @@ class AudioManager {
 
 
     private func setupKeyboardMonitoring() {
-        // Press-to-talk via a permission-free Carbon hotkey (default ⌥Space). Works in the
-        // App Store sandbox. Shift state is read from NSEvent.modifierFlags at press time,
-        // which needs no monitoring permission, preserving the "hold shift for AI" gesture.
-        globalHotKey = GlobalHotKey(
-            keyCode: UInt32(kVK_Space),
-            modifiers: UInt32(optionKey),
-            onPress: { [weak self] in self?.hotKeyPressed() },
-            onRelease: { [weak self] in self?.hotKeyReleased() }
-        )
+        // Press-to-talk via user-configurable global hotkeys (KeyboardShortcuts → Carbon
+        // RegisterEventHotKey). No TCC permission, App Store safe. Two bindings because a
+        // registered hotkey fires only on its exact chord — an extra modifier can't toggle AI.
+        KeyboardShortcuts.onKeyDown(for: .dictate) { [weak self] in self?.hotKeyPressed(withAI: false) }
+        KeyboardShortcuts.onKeyUp(for: .dictate) { [weak self] in self?.hotKeyReleased() }
+        KeyboardShortcuts.onKeyDown(for: .dictateWithAI) { [weak self] in self?.hotKeyPressed(withAI: true) }
+        KeyboardShortcuts.onKeyUp(for: .dictateWithAI) { [weak self] in self?.hotKeyReleased() }
 
         #if !MAS_BUILD
         // Direct-distribution builds additionally support holding fn. This needs Input
@@ -107,9 +105,9 @@ class AudioManager {
         #endif
     }
 
-    private func hotKeyPressed() {
+    private func hotKeyPressed(withAI: Bool) {
         guard !isRecording && !hasPendingPaste else { return }
-        wasShiftPressedOnStart = NSEvent.modifierFlags.contains(.shift)
+        wasShiftPressedOnStart = withAI
         startRecording()
     }
 

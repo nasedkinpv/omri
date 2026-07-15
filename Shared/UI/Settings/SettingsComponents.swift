@@ -147,39 +147,6 @@ struct FeatureRow: View {
     }
 }
 
-struct KeyboardShortcutRow: View {
-    let description: String
-    let shortcut: String
-    let detail: String
-
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text(description)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-
-                Spacer()
-
-                Text(shortcut)
-                    .font(.system(.caption, design: .monospaced))
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
-            }
-
-            HStack {
-                Text(detail)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Spacer()
-            }
-        }
-    }
-}
-
 // MARK: - macOS Section Headers/Footers
 
 struct SettingsSectionHeader: View {

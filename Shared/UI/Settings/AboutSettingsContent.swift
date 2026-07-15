@@ -74,7 +74,7 @@ struct AboutSettingsContent: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .gridColumnAlignment(.trailing)
-                            Text("Universal (Apple Silicon & Intel)")
+                            Text("Apple Silicon")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         }

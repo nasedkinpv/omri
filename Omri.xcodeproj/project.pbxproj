@@ -13,7 +13,7 @@
 		474C200E2E930AB900F33E30 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = 47A1B3C12E9F5A1200C44D77 /* Citadel */; };
 		47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE12DD278D4009E78D8 /* AudioManager.swift */; };
 		47A49FF92DD278D4009E78D8 /* PasteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE92DD278D4009E78D8 /* PasteManager.swift */; };
-		47B0C1022F1000010000BB02 /* GlobalHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B0C1012F1000010000BB01 /* GlobalHotKey.swift */; };
+		47C3D2022F3000010000DD02 /* DictationShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C3D2012F3000010000DD01 /* DictationShortcuts.swift */; };
 		47A49FFA2DD278D4009E78E1 /* DictationHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FEA2DD278D4009E78E1 /* DictationHUD.swift */; };
 		47A49FFC2DD278D4009E78D8 /* AudioManagerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */; };
 		47A49FFD2DD278D4009E78D8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A49FDF2DD278D4009E78D8 /* AppDelegate.swift */; };
@@ -21,6 +21,7 @@
 		47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CCB57A2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift */; };
 		47D4338D2E4D197C00EDD003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D4338C2E4D197C00EDD003 /* SettingsView.swift */; };
 		47D1A0032F0000010000AA03 /* DynamicNotchKit in Frameworks */ = {isa = PBXBuildFile; productRef = 47D1A0022F0000010000AA02 /* DynamicNotchKit */; };
+		47E2B0032F2000010000CC03 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 47E2B0022F2000010000CC02 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,7 +31,7 @@
 		47A49FE12DD278D4009E78D8 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManagerDelegate.swift; sourceTree = "<group>"; };
 		47A49FE92DD278D4009E78D8 /* PasteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteManager.swift; sourceTree = "<group>"; };
-		47B0C1012F1000010000BB01 /* GlobalHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKey.swift; sourceTree = "<group>"; };
+		47C3D2012F3000010000DD01 /* DictationShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationShortcuts.swift; sourceTree = "<group>"; };
 		47D1A0042F0000010000AA04 /* Omri-MAS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Omri-MAS.entitlements"; sourceTree = "<group>"; };
 		47A49FEA2DD278D4009E78E1 /* DictationHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationHUD.swift; sourceTree = "<group>"; };
 		47A49FEF2DD278D4009E78D8 /* VoiceDictation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VoiceDictation.entitlements; sourceTree = "<group>"; };
@@ -87,6 +88,7 @@
 			files = (
 				470D96C12E8AC65D0046CF66 /* FluidAudio in Frameworks */,
 				47D1A0032F0000010000AA03 /* DynamicNotchKit in Frameworks */,
+				47E2B0032F2000010000CC03 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,7 +106,7 @@
 				47A49FE12DD278D4009E78D8 /* AudioManager.swift */,
 				47A49FE22DD278D4009E78D8 /* AudioManagerDelegate.swift */,
 				47A49FE92DD278D4009E78D8 /* PasteManager.swift */,
-				47B0C1012F1000010000BB01 /* GlobalHotKey.swift */,
+				47C3D2012F3000010000DD01 /* DictationShortcuts.swift */,
 				47D1A0042F0000010000AA04 /* Omri-MAS.entitlements */,
 				47A49FEA2DD278D4009E78E1 /* DictationHUD.swift */,
 				47A49FEF2DD278D4009E78D8 /* VoiceDictation.entitlements */,
@@ -180,6 +182,7 @@
 			packageProductDependencies = (
 				470D96C02E8AC65D0046CF66 /* FluidAudio */,
 				47D1A0022F0000010000AA02 /* DynamicNotchKit */,
+				47E2B0022F2000010000CC02 /* KeyboardShortcuts */,
 			);
 			productName = Omri;
 			productReference = DA79FD132CDEE6650077AF85 /* Omri.app */;
@@ -216,6 +219,7 @@
 				470D96BF2E8AC65D0046CF66 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				474C1E8C2E92D1F800F33E30 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 				47D1A0012F0000010000AA01 /* XCRemoteSwiftPackageReference "DynamicNotchKit" */,
+				47E2B0012F2000010000CC01 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				47A1B3C02E9F5A1200C44D77 /* XCRemoteSwiftPackageReference "Citadel" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -263,7 +267,7 @@
 				47A49FF52DD278D4009E78D8 /* AudioManager.swift in Sources */,
 				47CCB57B2E8C3C9800B2DF57 /* AppleSpeechAnalyzerManager.swift in Sources */,
 				47A49FF92DD278D4009E78D8 /* PasteManager.swift in Sources */,
-				47B0C1022F1000010000BB02 /* GlobalHotKey.swift in Sources */,
+				47C3D2022F3000010000DD02 /* DictationShortcuts.swift in Sources */,
 				47A49FFA2DD278D4009E78E1 /* DictationHUD.swift in Sources */,
 				47A49FFC2DD278D4009E78D8 /* AudioManagerDelegate.swift in Sources */,
 				47A49FFD2DD278D4009E78D8 /* AppDelegate.swift in Sources */,
@@ -754,6 +758,14 @@
 				minimumVersion = 1.1.0;
 			};
 		};
+		47E2B0012F2000010000CC01 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -776,6 +788,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 47D1A0012F0000010000AA01 /* XCRemoteSwiftPackageReference "DynamicNotchKit" */;
 			productName = DynamicNotchKit;
+		};
+		47E2B0022F2000010000CC02 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47E2B0012F2000010000CC01 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

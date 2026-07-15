@@ -54,8 +54,10 @@ Native voice transcription for macOS and iOS. Use private on-device transcriptio
    ```
 
 4. Move `Omri.app` to Applications.
-5. Launch Omri and grant microphone/accessibility permissions.
+5. Launch Omri and grant microphone access.
 6. Pick a transcription provider in Settings.
+
+Hold ⌥Space to dictate. The hotkey needs no extra permission.
 
 ## Transcription Providers
 
@@ -70,8 +72,9 @@ Native voice transcription for macOS and iOS. Use private on-device transcriptio
 
 - macOS 26.0+
 - Apple Silicon recommended for on-device Nemotron
-- Microphone permission
-- Accessibility permission for paste-anywhere support
+- Microphone permission (required)
+- Accessibility permission (optional) — auto-inserts the transcript into the active app; without it, the text is copied to the clipboard
+- Input Monitoring (optional) — hold the fn key to dictate; the ⌥Space hotkey works without it
 
 ### iOS
 

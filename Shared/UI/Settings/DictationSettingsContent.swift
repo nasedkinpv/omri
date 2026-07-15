@@ -9,6 +9,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import KeyboardShortcuts
+#endif
 
 struct DictationSettingsContent: View {
     @ObservedObject var settings: Settings
@@ -174,19 +177,25 @@ struct DictationSettingsContent: View {
                 VStack(alignment: .leading, spacing: 16) {
                     SettingsSectionHeader(title: "Keyboard Shortcuts")
 
-                    VStack(spacing: 12) {
-                        KeyboardShortcutRow(
-                            description: "Start dictation",
-                            shortcut: "fn",
-                            detail: "Hold to record voice input"
-                        )
+                    VStack(alignment: .leading, spacing: 12) {
+                        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 12) {
+                            GridRow {
+                                Text("Dictate")
+                                    .gridColumnAlignment(.leading)
+                                KeyboardShortcuts.Recorder(for: .dictate)
+                            }
+                            GridRow {
+                                Text("Dictate with AI")
+                                KeyboardShortcuts.Recorder(for: .dictateWithAI)
+                            }
+                        }
 
-                        KeyboardShortcutRow(
-                            description: "Dictation with enhancement",
-                            shortcut: "fn + ⇧",
-                            detail: "Record and apply AI text processing"
-                        )
+                        SettingsSectionFooter(text: "Hold a shortcut to record; release to transcribe. \u{201C}Dictate with AI\u{201D} also applies text processing.")
                     }
+
+                    #if !MAS_BUILD
+                    SettingsSectionFooter(text: "You can also hold the fn key (requires Input Monitoring).")
+                    #endif
                 }
             }
             .padding()
